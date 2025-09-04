@@ -8,11 +8,6 @@ class Player(Entity):
         
     def create(self):
         super().create()
-        if not get_sprite(self.sprite_index):
-            self.sprite_width = 32
-            self.sprite_height = 32
-            self.mask_right = self.sprite_width
-            self.mask_bottom = self.sprite_height
 
     def step(self):
         super().step()
@@ -45,8 +40,4 @@ class Player(Entity):
         self.y = clamp(self.y, self.sprite_height//2, h - self.sprite_height//2)
         
     def draw(self):
-        if not get_sprite(self.sprite_index):
-            draw_set_color((0, 100, 255))
-            draw_rectangle(self.x - self.sprite_width//2, self.y - self.sprite_height//2, self.sprite_width, self.sprite_height, True)
-        else:
-            super().draw()
+        super().draw()

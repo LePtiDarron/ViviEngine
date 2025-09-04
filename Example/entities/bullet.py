@@ -2,19 +2,10 @@ from ViviEngine import *
 from entities.enemy import Enemy
 
 class Bullet(Entity):
-    def __init__(self, x, y, direction, speed=300):
-        super().__init__(x, y)
-        self.direction = direction
-        self.speed = speed
-        self.sprite_index = "bullet"
-        
     def create(self):
         super().create()
-        if not get_sprite(self.sprite_index):
-            self.sprite_width = 8
-            self.sprite_height = 8
-            self.mask_right = self.sprite_width
-            self.mask_bottom = self.sprite_height
+        self.speed = 300
+        self.set_sprite("bullet")
             
     def step(self):
         super().step()
@@ -37,8 +28,4 @@ class Bullet(Entity):
                     break
 
     def draw(self):
-        if not get_sprite(self.sprite_index):
-            draw_set_color((255, 255, 0))
-            draw_circle(self.x, self.y, 4, True)
-        else:
-            super().draw()
+        super().draw()

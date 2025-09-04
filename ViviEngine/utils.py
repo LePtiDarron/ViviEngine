@@ -41,13 +41,16 @@ def load_assets(assets_folder: str = "assets"):
         assets_folder: Chemin vers le dossier des assets
     """
     global _sprites, _sounds, _fonts
+
+    base_path = os.path.dirname(os.path.abspath(__file__))
+    assets_path = os.path.join(base_path, assets_folder)
     
-    if not os.path.exists(assets_folder):
-        print(f"Warning: Assets folder '{assets_folder}' not found!")
+    if not os.path.exists(assets_path):
+        print(f"Warning: Assets folder '{assets_path}' not found!")
         return
     
     # Charger les images
-    images_folder = os.path.join(assets_folder, "images")
+    images_folder = os.path.join(assets_path, "images")
     if os.path.exists(images_folder):
         for filename in os.listdir(images_folder):
             if filename.lower().endswith(('.png', '.jpg', '.jpeg', '.gif', '.bmp')):
@@ -58,9 +61,11 @@ def load_assets(assets_folder: str = "assets"):
                     print(f"Loaded sprite: {name}")
                 except pygame.error as e:
                     print(f"Error loading sprite {filename}: {e}")
+    else:
+        print(f"Warning: Assets folder '{images_folder}' not found!")
     
     # Charger les sons
-    sounds_folder = os.path.join(assets_folder, "sounds")
+    sounds_folder = os.path.join(assets_path, "sounds")
     if os.path.exists(sounds_folder):
         for filename in os.listdir(sounds_folder):
             if filename.lower().endswith(('.wav', '.mp3', '.ogg')):
@@ -71,9 +76,11 @@ def load_assets(assets_folder: str = "assets"):
                     print(f"Loaded sound: {name}")
                 except pygame.error as e:
                     print(f"Error loading sound {filename}: {e}")
+    else:
+        print(f"Warning: Assets folder '{sounds_folder}' not found!")
     
     # Charger les polices
-    fonts_folder = os.path.join(assets_folder, "fonts")
+    fonts_folder = os.path.join(assets_path, "fonts")
     if os.path.exists(fonts_folder):
         for filename in os.listdir(fonts_folder):
             if filename.lower().endswith(('.ttf', '.otf')):
@@ -84,6 +91,8 @@ def load_assets(assets_folder: str = "assets"):
                     print(f"Loaded font: {name}")
                 except pygame.error as e:
                     print(f"Error loading font {filename}: {e}")
+    else:
+        print(f"Warning: Assets folder '{fonts_folder}' not found!")
 
 def get_sprite(name: str) -> Optional[pygame.Surface]:
     """Récupère un sprite par son nom."""
