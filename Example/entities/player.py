@@ -1,26 +1,23 @@
 from ViviEngine import *
 
 class Player(Entity):
-    def __init__(self, x, y):
-        super().__init__(x, y)
-        self.speed = 200
-        self.sprite_index = "player"
-        
     def create(self):
         super().create()
+        self.speed = 200
+        self.set_sprite("player")
 
     def step(self):
         super().step()
         dx = 0
         dy = 0
         
-        if keyboard_check(pygame.K_LEFT) or keyboard_check(pygame.K_a):
+        if keyboard_check(KEY_LEFT) or keyboard_check(KEY_Q):
             dx = -1
-        if keyboard_check(pygame.K_RIGHT) or keyboard_check(pygame.K_d):
+        if keyboard_check(KEY_RIGHT) or keyboard_check(KEY_D):
             dx = 1
-        if keyboard_check(pygame.K_UP) or keyboard_check(pygame.K_w):
+        if keyboard_check(KEY_UP) or keyboard_check(KEY_Z):
             dy = -1
-        if keyboard_check(pygame.K_DOWN) or keyboard_check(pygame.K_s):
+        if keyboard_check(KEY_DOWN) or keyboard_check(KEY_S):
             dy = 1
             
         if dx != 0 and dy != 0:

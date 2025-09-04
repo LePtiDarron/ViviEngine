@@ -2,14 +2,11 @@ from ViviEngine import *
 from entities.player import Player
 
 class Enemy(Entity):
-    def __init__(self, x, y):
-        super().__init__(x, y)
-        self.speed = 80
-        self.sprite_index = "enemy"
-        self.player = None
-
     def create(self):
         super().create()
+        self.speed = 80
+        self.set_sprite("enemy")
+        self.player = None
         if self.scene:
             players = self.scene.get_entities_of_type(Player)
             if players:

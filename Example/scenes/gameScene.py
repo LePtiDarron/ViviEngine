@@ -32,9 +32,9 @@ class GameScene(Scene):
         if self.enemy_spawn_timer >= self.enemy_spawn_delay:
             self.enemy_spawn_timer = 0
             self._spawn_enemy()
-        if keyboard_check_pressed(pygame.K_SPACE):
+        if keyboard_check_pressed(KEY_SPACE):
             self._player_shoot()
-        if keyboard_check_pressed(pygame.K_r):
+        if keyboard_check_pressed(KEY_R):
             self.game.switch_scene("game")
             
     def draw(self):
