@@ -1,0 +1,1469 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vivi Engine - Python 2D Game Engine</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            min-height: 100vh;
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+        }
+
+        header {
+            background: linear-gradient(135deg, #2c3e50 0%, #4a6741 100%);
+            color: white;
+            padding: 2rem 0;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grid" width="10" height="10" patternUnits="userSpaceOnUse"><path d="M 10 0 L 0 0 0 10" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="1"/></pattern></defs><rect width="100" height="100" fill="url(%23grid)"/></svg>');
+            opacity: 0.3;
+        }
+
+        header h1 {
+            font-size: 3.5rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+            position: relative;
+            z-index: 1;
+        }
+
+        header p {
+            font-size: 1.3rem;
+            opacity: 0.9;
+            position: relative;
+            z-index: 1;
+        }
+
+        nav {
+            background: #34495e;
+            padding: 1rem 0;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .nav-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 2rem;
+            padding: 0 2rem;
+        }
+
+        .nav-item {
+            color: white;
+            text-decoration: none;
+            padding: 0.8rem 1.5rem;
+            border-radius: 25px;
+            transition: all 0.3s ease;
+            font-weight: 500;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .nav-item::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transition: left 0.5s;
+        }
+
+        .nav-item:hover::before {
+            left: 100%;
+        }
+
+        .nav-item:hover, .nav-item.active {
+            background: #3498db;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(52, 152, 219, 0.4);
+        }
+
+        main {
+            padding: 3rem 2rem;
+        }
+
+        .section {
+            display: none;
+            animation: fadeIn 0.5s ease-in;
+        }
+
+        .section.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .hero {
+            text-align: center;
+            margin-bottom: 4rem;
+        }
+
+        .hero h2 {
+            font-size: 2.5rem;
+            color: #2c3e50;
+            margin-bottom: 1rem;
+        }
+
+        .hero p {
+            font-size: 1.2rem;
+            color: #7f8c8d;
+            max-width: 600px;
+            margin: 0 auto 2rem;
+        }
+
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            margin: 3rem 0;
+        }
+
+        .feature-card {
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            padding: 2rem;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            border: 1px solid rgba(0,0,0,0.05);
+        }
+
+        .feature-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 30px rgba(0,0,0,0.15);
+        }
+
+        .feature-card h3 {
+            color: #2c3e50;
+            margin-bottom: 1rem;
+            font-size: 1.4rem;
+        }
+
+        .feature-card p {
+            color: #6c757d;
+            line-height: 1.7;
+        }
+
+        .code-block {
+            background: #2d3748;
+            color: #e2e8f0;
+            padding: 1.5rem;
+            border-radius: 10px;
+            margin: 1.5rem 0;
+            overflow-x: auto;
+            border-left: 4px solid #3498db;
+            position: relative;
+        }
+
+        .code-block::before {
+            content: 'Python';
+            position: absolute;
+            top: 0.5rem;
+            right: 1rem;
+            font-size: 0.8rem;
+            color: #a0aec0;
+            font-weight: bold;
+        }
+
+        .install-section {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 3rem;
+            border-radius: 15px;
+            margin: 2rem 0;
+        }
+
+        .install-section h3 {
+            margin-bottom: 1.5rem;
+            font-size: 1.8rem;
+        }
+
+        .install-steps {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 2rem;
+            margin-top: 2rem;
+        }
+
+        .install-step {
+            background: rgba(255,255,255,0.1);
+            padding: 1.5rem;
+            border-radius: 10px;
+            backdrop-filter: blur(10px);
+        }
+
+        .install-step h4 {
+            margin-bottom: 1rem;
+            font-size: 1.2rem;
+        }
+
+        .btn {
+            display: inline-block;
+            background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+            color: white;
+            padding: 1rem 2rem;
+            text-decoration: none;
+            border-radius: 25px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            margin: 1rem 0.5rem 1rem 0;
+            box-shadow: 0 4px 15px rgba(52, 152, 219, 0.4);
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(52, 152, 219, 0.6);
+        }
+
+        .btn-secondary {
+            background: linear-gradient(135deg, #95a5a6 0%, #7f8c8d 100%);
+            box-shadow: 0 4px 15px rgba(149, 165, 166, 0.4);
+        }
+
+        .btn-secondary:hover {
+            box-shadow: 0 6px 20px rgba(149, 165, 166, 0.6);
+        }
+
+        h2 {
+            color: #2c3e50;
+            font-size: 2.2rem;
+            margin-bottom: 1.5rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 3px solid #3498db;
+            position: relative;
+        }
+
+        h3 {
+            color: #34495e;
+            font-size: 1.6rem;
+            margin: 2rem 0 1rem;
+        }
+
+        h4 {
+            color: #34495e;
+            font-size: 1.3rem;
+            margin: 1.5rem 0 0.8rem;
+        }
+
+        .class-card, .function-card {
+            background: white;
+            border: 1px solid #e9ecef;
+            border-radius: 10px;
+            padding: 2rem;
+            margin: 1.5rem 0;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            transition: box-shadow 0.3s ease;
+        }
+
+        .class-card:hover, .function-card:hover {
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+        }
+
+        .class-name, .function-name {
+            font-family: 'Monaco', 'Consolas', monospace;
+            font-size: 1.4rem;
+            color: #e74c3c;
+            margin-bottom: 1rem;
+            background: #f8f9fa;
+            padding: 0.5rem 1rem;
+            border-radius: 5px;
+            border-left: 4px solid #e74c3c;
+        }
+
+        .method-list, .parameter-list {
+            margin: 1rem 0;
+        }
+
+        .method-item, .parameter-item {
+            background: #f8f9fa;
+            padding: 0.8rem;
+            margin: 0.5rem 0;
+            border-radius: 5px;
+            border-left: 3px solid #3498db;
+        }
+
+        .method-item code, .parameter-item code {
+            color: #e74c3c;
+            font-weight: bold;
+        }
+
+        .tutorial-card {
+            background: linear-gradient(135deg, #74b9ff 0%, #0984e3 100%);
+            color: white;
+            padding: 2rem;
+            border-radius: 15px;
+            margin: 2rem 0;
+            cursor: pointer;
+            transition: transform 0.3s ease;
+        }
+
+        .tutorial-card:hover {
+            transform: scale(1.02);
+        }
+
+        .tutorial-content {
+            display: none;
+            background: white;
+            color: #333;
+            padding: 2rem;
+            border-radius: 0 0 15px 15px;
+            margin-top: -15px;
+            border: 1px solid #e9ecef;
+        }
+
+        .tutorial-card.expanded .tutorial-content {
+            display: block;
+        }
+
+        footer {
+            background: #2c3e50;
+            color: white;
+            text-align: center;
+            padding: 2rem;
+            margin-top: 4rem;
+        }
+
+        .highlight {
+            background: linear-gradient(120deg, rgba(255, 193, 7, 0.3) 0%, rgba(255, 193, 7, 0.3) 100%);
+            padding: 0.2rem 0.4rem;
+            border-radius: 3px;
+        }
+
+        @media (max-width: 768px) {
+            header h1 { font-size: 2.5rem; }
+            header p { font-size: 1.1rem; }
+            .nav-container { flex-direction: column; align-items: center; gap: 1rem; }
+            main { padding: 2rem 1rem; }
+            .feature-grid { grid-template-columns: 1fr; }
+            .install-steps { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Vivi Engine</h1>
+            <p>A Python 2D Game Engine</p>
+        </header>
+
+        <nav>
+            <div class="nav-container">
+                <a href="#home" class="nav-item active" onclick="showSection('home')">Home</a>
+                <a href="#installation" class="nav-item" onclick="showSection('installation')">Installation</a>
+                <a href="#classes" class="nav-item" onclick="showSection('classes')">Classes</a>
+                <a href="#functions" class="nav-item" onclick="showSection('functions')">Functions</a>
+                <a href="#tutorials" class="nav-item" onclick="showSection('tutorials')">Tutorials</a>
+            </div>
+        </nav>
+
+        <main>
+            <!-- HOME SECTION -->
+            <section id="home" class="section active">
+                <div class="hero">
+                    <h2>Welcome to Vivi Engine</h2>
+                    <p>A powerful yet simple 2D game engine built with Python and Pygame.</p>
+                    <a href="https://github.com/LePtiDarron/ViviEngine" class="btn" target="_blank">Get Started on GitHub</a>
+                    <a href="#installation" class="btn btn-secondary" onclick="showSection('installation')">Quick Install</a>
+                </div>
+
+                <div class="feature-grid">
+                    <div class="feature-card">
+                        <h3>🎮 Game-Ready Components</h3>
+                        <p>Built-in Entity, Scene, and Game classes provide a solid foundation for any 2D game project. Start prototyping immediately with intuitive architecture.</p>
+                    </div>
+                    <div class="feature-card">
+                        <h3>🚀 Easy to Learn</h3>
+                        <p>Familiar syntax and concepts for developers, with Python's simplicity for newcomers. Comprehensive documentation gets you started quickly.</p>
+                    </div>
+                    <div class="feature-card">
+                        <h3>🎨 Rich Graphics Support</h3>
+                        <p>Sprite rendering, transformations, surfaces, cameras, and drawing utilities. Everything you need to bring your game world to life.</p>
+                    </div>
+                    <div class="feature-card">
+                        <h3>🎯 Input & Audio</h3>
+                        <p>Complete keyboard and mouse input handling, plus audio support for sound effects and music. Build interactive experiences effortlessly.</p>
+                    </div>
+                    <div class="feature-card">
+                        <h3>⚡ Performance Focused</h3>
+                        <p>Optimized rendering pipeline, entity management, and delta-time based movement for smooth gameplay across different frame rates.</p>
+                    </div>
+                    <div class="feature-card">
+                        <h3>🔧 Extensible Design</h3>
+                        <p>Clean, modular architecture makes it easy to extend the engine with custom functionality and integrate third-party libraries.</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- INSTALLATION SECTION -->
+            <section id="installation" class="section">
+                <h2>Installation & Usage</h2>
+                
+                <div class="install-section">
+                    <h3>🚀 Quick Start</h3>
+                    <p>Get Vivi Engine running in minutes with these simple steps:</p>
+                    
+                    <div class="install-steps">
+                        <div class="install-step">
+                            <h4>1. Prerequisites</h4>
+                            <p>Ensure you have Python 3.7+ installed on your system.</p>
+                        </div>
+                        <div class="install-step">
+                            <h4>2. Install Pygame</h4>
+                            <p>Vivi Engine is built on top of Pygame for graphics and input handling.</p>
+                        </div>
+                        <div class="install-step">
+                            <h4>3. Clone Repository</h4>
+                            <p>Download the latest version from GitHub and start building!</p>
+                        </div>
+                    </div>
+                </div>
+
+                <h3>Installation Commands</h3>
+                <div class="code-block">pip install pygame
+git clone https://github.com/LePtiDarron/ViviEngine.git
+cd ViviEngine
+pip install -e .</div>
+
+                <h3>Your First Game</h3>
+                <p>Create a simple game with just a few lines of code:</p>
+                
+                <div class="code-block">from ViviEngine import *
+
+# Create the game instance
+game = Game(800, 600, "My First Game", 60)
+
+# Define a simple scene
+class MenuScene(Scene):
+    def create(self):
+        self.background_color = (64, 128, 255)
+    
+    def step(self):
+        super().step()
+        if keyboard_check_pressed(pygame.K_SPACE):
+            print("Space was pressed!")
+    
+    def draw(self):
+        super().draw()
+        draw_text(400, 300, "Press SPACE to interact!", scale=2)
+
+# Setup and run
+menu = MenuScene()
+game.add_scene("menu", menu)
+game.init_scene("menu")
+game.run()</div>
+
+                <h3>Project Structure</h3>
+                <p>Organize your game project like this:</p>
+                
+                <div class="code-block">YourGame/
+├── main.py                 # Entry point
+├── assets/
+│   ├── images/            # PNG, JPG sprites
+│   ├── sounds/            # WAV, MP3 audio
+│   └── fonts/             # TTF, OTF fonts
+├── entities/              # Game objects
+│   ├── player.py
+│   ├── enemy.py
+│   └── bullet.py
+└── scenes/                # Game screens
+    ├── menu.py
+    ├── game.py
+    └── gameover.py</div>
+
+                <a href="https://github.com/LePtiDarron/ViviEngine" class="btn" target="_blank">View Full Examples on GitHub</a>
+            </section>
+
+            <!-- CLASSES SECTION -->
+            <section id="classes" class="section">
+                <h2>Core Classes</h2>
+                <p>Vivi Engine provides three main classes that form the backbone of any game:</p>
+
+                <div class="class-card">
+                    <div class="class-name">Game</div>
+                    <p>The main engine class that manages the game loop, window, and scene transitions.</p>
+                    
+                    <h4>Constructor</h4>
+                    <div class="code-block">Game(width=800, height=600, title="ViviEngine Game", fps=60)</div>
+                    
+                    <h4>Key Methods</h4>
+                    <div class="method-list">
+                        <div class="method-item">
+                            <code>add_scene(name, scene)</code> - Register a scene with a name
+                        </div>
+                        <div class="method-item">
+                            <code>switch_scene(name)</code> - Schedule scene change for end of frame
+                        </div>
+                        <div class="method-item">
+                            <code>init_scene(name)</code> - Immediately initialize and activate scene
+                        </div>
+                        <div class="method-item">
+                            <code>run()</code> - Start the main game loop
+                        </div>
+                        <div class="method-item">
+                            <code>get_delta_time()</code> - Get frame time in seconds
+                        </div>
+                    </div>
+                </div>
+
+                <div class="class-card">
+                    <div class="class-name">Scene</div>
+                    <p>Represents a game screen or level. Manages entities and handles game logic for a specific state.</p>
+                    
+                    <h4>Override Methods</h4>
+                    <div class="method-list">
+                        <div class="method-item">
+                            <code>create()</code> - Called when scene is initialized
+                        </div>
+                        <div class="method-item">
+                            <code>step()</code> - Called every frame for logic updates
+                        </div>
+                        <div class="method-item">
+                            <code>draw()</code> - Called every frame for rendering
+                        </div>
+                        <div class="method-item">
+                            <code>cleanup()</code> - Called when scene is destroyed
+                        </div>
+                    </div>
+                    
+                    <h4>Entity Management</h4>
+                    <div class="method-list">
+                        <div class="method-item">
+                            <code>add_entity(entity)</code> - Add entity to scene
+                        </div>
+                        <div class="method-item">
+                            <code>remove_entity(entity)</code> - Mark entity for removal
+                        </div>
+                        <div class="method-item">
+                            <code>get_entities_of_type(type)</code> - Find all entities of specific type
+                        </div>
+                        <div class="method-item">
+                            <code>count_entities_of_type(type)</code> - Count entities of specific type
+                        </div>
+                    </div>
+                    
+                    <h4>Properties</h4>
+                    <div class="parameter-list">
+                        <div class="parameter-item">
+                            <code>background_color</code> - RGB tuple for background color
+                        </div>
+                    </div>
+                </div>
+
+                <div class="class-card">
+                    <div class="class-name">Entity</div>
+                    <p>Base class for all game objects. Provides position, sprites, collision detection, and lifecycle management.</p>
+                    
+                    <h4>Constructor</h4>
+                    <div class="code-block">Entity(x=0, y=0)</div>
+                    
+                    <h4>Position & Transform</h4>
+                    <div class="parameter-list">
+                        <div class="parameter-item">
+                            <code>x, y</code> - Current position
+                        </div>
+                        <div class="parameter-item">
+                            <code>xprevious, yprevious</code> - Previous frame position
+                        </div>
+                        <div class="parameter-item">
+                            <code>image_xscale, image_yscale</code> - Sprite scaling (1.0 = normal)
+                        </div>
+                        <div class="parameter-item">
+                            <code>image_angle</code> - Rotation in degrees
+                        </div>
+                        <div class="parameter-item">
+                            <code>image_alpha</code> - Transparency (0.0 to 1.0)
+                        </div>
+                    </div>
+                    
+                    <h4>Rendering</h4>
+                    <div class="parameter-list">
+                        <div class="parameter-item">
+                            <code>sprite_index</code> - Name of sprite to display
+                        </div>
+                        <div class="parameter-item">
+                            <code>depth</code> - Render depth (higher = in front)
+                        </div>
+                        <div class="parameter-item">
+                            <code>visible</code> - Whether entity is drawn
+                        </div>
+                    </div>
+                    
+                    <h4>State</h4>
+                    <div class="parameter-list">
+                        <div class="parameter-item">
+                            <code>active</code> - Whether step() is called
+                        </div>
+                        <div class="parameter-item">
+                            <code>scene</code> - Reference to parent scene
+                        </div>
+                        <div class="parameter-item">
+                            <code>id</code> - Unique identifier
+                        </div>
+                    </div>
+                    
+                    <h4>Key Methods</h4>
+                    <div class="method-list">
+                        <div class="method-item">
+                            <code>create()</code> - Override for initialization
+                        </div>
+                        <div class="method-item">
+                            <code>step()</code> - Override for per-frame logic
+                        </div>
+                        <div class="method-item">
+                            <code>draw()</code> - Override for custom rendering
+                        </div>
+                        <div class="method-item">
+                            <code>destroy()</code> - Mark for destruction
+                        </div>
+                        <div class="method-item">
+                            <code>set_sprite(name)</code> - Change sprite
+                        </div>
+                    </div>
+                    
+                    <h4>Collision Detection</h4>
+                    <div class="method-list">
+                        <div class="method-item">
+                            <code>bbox_collision(other)</code> - Check collision with another entity
+                        </div>
+                        <div class="method-item">
+                            <code>point_in_bbox(x, y)</code> - Check if point is inside entity
+                        </div>
+                        <div class="method-item">
+                            <code>distance_to(other)</code> - Calculate distance to another entity
+                        </div>
+                        <div class="method-item">
+                            <code>direction_to(other)</code> - Calculate angle to another entity
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- FUNCTIONS SECTION -->
+            <section id="functions" class="section">
+                <h2>Utility Functions</h2>
+                <p>Vivi Engine provides a comprehensive set of utility functions for common game development tasks:</p>
+
+                <div class="function-card">
+                    <div class="function-name">Asset Management</div>
+                    <div class="method-list">
+                        <div class="method-item">
+                            <code>load_assets(folder="assets")</code> - Load all sprites, sounds, and fonts from folder
+                        </div>
+                        <div class="method-item">
+                            <code>get_sprite(name)</code> - Retrieve loaded sprite by name
+                        </div>
+                        <div class="method-item">
+                            <code>get_sound(name)</code> - Retrieve loaded sound by name
+                        </div>
+                        <div class="method-item">
+                            <code>get_font(name)</code> - Retrieve loaded font by name
+                        </div>
+                    </div>
+                </div>
+
+                <div class="function-card">
+                    <div class="function-name">Drawing Functions</div>
+                    <div class="method-list">
+                        <div class="method-item">
+                            <code>draw_clear(color)</code> - Clear screen with RGB color
+                        </div>
+                        <div class="method-item">
+                            <code>draw_sprite(x, y, name, xscale=1, yscale=1, angle=0)</code> - Draw sprite with transformations
+                        </div>
+                        <div class="method-item">
+                            <code>draw_text(x, y, text, scale=1, font=None)</code> - Draw text string
+                        </div>
+                        <div class="method-item">
+                            <code>draw_rectangle(x, y, width, height, filled=True)</code> - Draw rectangle
+                        </div>
+                        <div class="method-item">
+                            <code>draw_circle(x, y, radius, filled=True)</code> - Draw circle
+                        </div>
+                        <div class="method-item">
+                            <code>draw_line(x1, y1, x2, y2, width=1)</code> - Draw line
+                        </div>
+                        <div class="method-item">
+                            <code>draw_set_color(rgb_tuple)</code> - Set drawing color
+                        </div>
+                        <div class="method-item">
+                            <code>draw_set_alpha(alpha)</code> - Set drawing transparency (0.0-1.0)
+                        </div>
+                    </div>
+                </div>
+
+                <div class="function-card">
+                    <div class="function-name">Input Handling</div>
+                    <h4>Keyboard</h4>
+                    <div class="method-list">
+                        <div class="method-item">
+                            <code>keyboard_check_pressed(key)</code> - True if key was just pressed this frame
+                        </div>
+                        <div class="method-item">
+                            <code>keyboard_check(key)</code> - True if key is currently held down
+                        </div>
+                        <div class="method-item">
+                            <code>keyboard_check_released(key)</code> - True if key was just released this frame
+                        </div>
+                    </div>
+                    
+                    <h4>Mouse</h4>
+                    <div class="method-list">
+                        <div class="method-item">
+                            <code>mouse_check_pressed(button)</code> - True if mouse button just pressed (1=left, 2=middle, 3=right)
+                        </div>
+                        <div class="method-item">
+                            <code>mouse_check(button)</code> - True if mouse button held down
+                        </div>
+                        <div class="method-item">
+                            <code>mouse_check_released(button)</code> - True if mouse button just released
+                        </div>
+                        <div class="method-item">
+                            <code>mouse_get_x(), mouse_get_y()</code> - Get current mouse position
+                        </div>
+                    </div>
+                </div>
+
+                <div class="function-card">
+                    <div class="function-name">Audio</div>
+                    <div class="method-list">
+                        <div class="method-item">
+                            <code>play_sound(name, volume=1.0)</code> - Play sound effect with volume control
+                        </div>
+                        <div class="method-item">
+                            <code>stop_sound(name)</code> - Stop playing sound
+                        </div>
+                    </div>
+                </div>
+
+                <div class="function-card">
+                    <div class="function-name">Math & Utilities</div>
+                    <div class="method-list">
+                        <div class="method-item">
+                            <code>random_range(min, max)</code> - Generate random float between min and max
+                        </div>
+                        <div class="method-item">
+                            <code>random_int(min, max)</code> - Generate random integer between min and max (inclusive)
+                        </div>
+                        <div class="method-item">
+                            <code>clamp(value, min, max)</code> - Constrain value within range
+                        </div>
+                        <div class="method-item">
+                            <code>lerp(start, end, factor)</code> - Linear interpolation between two values
+                        </div>
+                        <div class="method-item">
+                            <code>distance(x1, y1, x2, y2)</code> - Calculate Euclidean distance between points
+                        </div>
+                        <div class="method-item">
+                            <code>point_direction(x1, y1, x2, y2)</code> - Calculate angle between points in degrees
+                        </div>
+                        <div class="method-item">
+                            <code>lengthdir_x(length, direction)</code> - Get X component of vector
+                        </div>
+                        <div class="method-item">
+                            <code>lengthdir_y(length, direction)</code> - Get Y component of vector
+                        </div>
+                    </div>
+                </div>
+
+                <div class="function-card">
+                    <div class="function-name">Surface Management</div>
+                    <div class="method-list">
+                        <div class="method-item">
+                            <code>surface_create(width, height)</code> - Create new drawing surface
+                        </div>
+                        <div class="method-item">
+                            <code>surface_set_target(surface)</code> - Set drawing target to surface
+                        </div>
+                        <div class="method-item">
+                            <code>surface_reset_target()</code> - Reset drawing target to screen
+                        </div>
+                        <div class="method-item">
+                            <code>surface_draw(x, y, surface, xscale=1, yscale=1)</code> - Draw surface to current target
+                        </div>
+                        <div class="method-item">
+                            <code>surface_destroy(surface)</code> - Free surface memory
+                        </div>
+                    </div>
+                </div>
+
+                <div class="function-card">
+                    <div class="function-name">Camera System</div>
+                    <div class="method-list">
+                        <div class="method-item">
+                            <code>camera_create()</code> - Create new camera, returns camera ID
+                        </div>
+                        <div class="method-item">
+                            <code>camera_set_view_size(id, width, height)</code> - Set camera view dimensions
+                        </div>
+                        <div class="method-item">
+                            <code>camera_set_view_pos(id, x, y)</code> - Set camera position in world
+                        </div>
+                        <div class="method-item">
+                            <code>camera_set_view_port(id, x, y, width, height)</code> - Set camera viewport on screen
+                        </div>
+                        <div class="method-item">
+                            <code>camera_set_active(id)</code> - Make camera active
+                        </div>
+                        <div class="method-item">
+                            <code>camera_get_view_pos(id=None)</code> - Get camera position
+                        </div>
+                    </div>
+                </div>
+
+                <div class="function-card">
+                    <div class="function-name">Entity Management</div>
+                    <div class="method-list">
+                        <div class="method-item">
+                            <code>entity_create(x, y, entity_class)</code> - Create and add entity to current scene
+                        </div>
+                        <div class="method-item">
+                            <code>entity_destroy(entity)</code> - Mark entity for destruction
+                        </div>
+                    </div>
+                </div>
+
+                <div class="function-card">
+                    <div class="function-name">Window Management</div>
+                    <div class="method-list">
+                        <div class="method-item">
+                            <code>window_get_size()</code> - Returns tuple (width, height) of window
+                        </div>
+                        <div class="method-item">
+                            <code>window_set_size(width, height)</code> - Resize game window
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- TUTORIALS SECTION -->
+            <section id="tutorials" class="section">
+                <h2>Tutorials</h2>
+                <p>Learn Vivi Engine step by step with these comprehensive tutorials:</p>
+
+                <div class="tutorial-card" onclick="toggleTutorial(this)">
+                    <h3>Tutorial 1: Your First Game</h3>
+                    <p>Learn the basics by creating a simple interactive scene with player movement.</p>
+                    <div class="tutorial-content">
+                        <h4>Step 1: Setup Project</h4>
+                        <p>Create a new folder for your game and add the main.py file:</p>
+                        <div class="code-block">from ViviEngine import *
+import pygame
+import os
+
+# Load assets
+assets_path = os.path.join(os.path.dirname(__file__), "assets")
+load_assets(assets_path)</div>
+
+                        <h4>Step 2: Create Player Entity</h4>
+                        <div class="code-block">class Player(Entity):
+    def create(self):
+        super().create()
+        # Set sprite if you have one, otherwise we'll draw a rectangle
+        self.speed = 200
+        self.color = (255, 100, 100)  # Red color
+        
+    def step(self):
+        super().step()
+        dt = self.scene.game.get_delta_time()
+        
+        # Movement with arrow keys or WASD
+        if keyboard_check(pygame.K_LEFT) or keyboard_check(ord('a')):
+            self.x -= self.speed * dt
+        if keyboard_check(pygame.K_RIGHT) or keyboard_check(ord('d')):
+            self.x += self.speed * dt
+        if keyboard_check(pygame.K_UP) or keyboard_check(ord('w')):
+            self.y -= self.speed * dt
+        if keyboard_check(pygame.K_DOWN) or keyboard_check(ord('s')):
+            self.y += self.speed * dt
+            
+        # Keep player on screen
+        self.x = clamp(self.x, 25, window_get_size()[0] - 25)
+        self.y = clamp(self.y, 25, window_get_size()[1] - 25)
+        
+    def draw(self):
+        super().draw()
+        # Draw a simple rectangle if no sprite
+        if not self.sprite_index:
+            draw_set_color(self.color)
+            draw_rectangle(self.x - 25, self.y - 25, 50, 50, True)</div>
+
+                        <h4>Step 3: Create Game Scene</h4>
+                        <div class="code-block">class GameScene(Scene):
+    def create(self):
+        super().create()
+        self.background_color = (50, 150, 200)  # Sky blue
+        
+        # Create player in center of screen
+        player = Player(400, 300)
+        self.add_entity(player)
+        
+    def step(self):
+        super().step()
+        # Exit game with Escape
+        if keyboard_check_pressed(pygame.K_ESCAPE):
+            self.game.quit()
+            
+    def draw(self):
+        super().draw()
+        # Draw UI text
+        draw_set_color((255, 255, 255))
+        draw_text(10, 10, "Use WASD or Arrow Keys to move", scale=1.5)
+        draw_text(10, 40, "Press ESC to exit", scale=1)</div>
+
+                        <h4>Step 4: Run the Game</h4>
+                        <div class="code-block"># Create game instance
+game = Game(800, 600, "My First Vivi Game", 60)
+
+# Create and add scene
+game_scene = GameScene()
+game.add_scene("game", game_scene)
+
+# Start the game
+game.init_scene("game")
+game.run()</div>
+
+                        <p><strong>Congratulations!</strong> You now have a working game with player movement. Try adding sprites by placing PNG files in an "assets/images/" folder!</p>
+                    </div>
+                </div>
+
+                <div class="tutorial-card" onclick="toggleTutorial(this)">
+                    <h3>Tutorial 2: Adding Enemies and Collision</h3>
+                    <p>Expand your game with enemy entities and collision detection.</p>
+                    <div class="tutorial-content">
+                        <h4>Step 1: Create Enemy Entity</h4>
+                        <div class="code-block">class Enemy(Entity):
+    def create(self):
+        super().create()
+        self.speed = 100
+        self.color = (255, 50, 50)  # Red
+        self.target = None
+        
+    def step(self):
+        super().step()
+        dt = self.scene.game.get_delta_time()
+        
+        # Find player target
+        if not self.target:
+            players = self.scene.get_entities_of_type(Player)
+            if players:
+                self.target = players[0]
+        
+        # Move toward player
+        if self.target:
+            direction = self.direction_to(self.target)
+            vx = lengthdir_x(self.speed, direction)
+            vy = lengthdir_y(self.speed, direction)
+            
+            self.x += vx * dt
+            self.y += vy * dt
+            
+    def draw(self):
+        super().draw()
+        if not self.sprite_index:
+            draw_set_color(self.color)
+            draw_circle(self.x, self.y, 20, True)</div>
+
+                        <h4>Step 2: Add Collision Detection</h4>
+                        <div class="code-block"># Update Player class step method
+def step(self):
+    super().step()
+    dt = self.scene.game.get_delta_time()
+    
+    # ... existing movement code ...
+    
+    # Check collision with enemies
+    enemies = self.scene.get_entities_of_type(Enemy)
+    for enemy in enemies:
+        if self.bbox_collision(enemy):
+            # Game over - restart scene
+            self.scene.game.switch_scene("game")
+            break</div>
+
+                        <h4>Step 3: Spawn Enemies</h4>
+                        <div class="code-block"># Update GameScene class
+class GameScene(Scene):
+    def create(self):
+        super().create()
+        self.background_color = (50, 150, 200)
+        self.spawn_timer = 0
+        self.spawn_delay = 2.0  # Spawn every 2 seconds
+        
+        # Create player
+        player = Player(400, 300)
+        self.add_entity(player)
+        
+    def step(self):
+        super().step()
+        dt = self.game.get_delta_time()
+        
+        # Spawn enemies periodically
+        self.spawn_timer += dt
+        if self.spawn_timer >= self.spawn_delay:
+            self.spawn_timer = 0
+            self.spawn_enemy()
+            
+        # Exit with ESC
+        if keyboard_check_pressed(pygame.K_ESCAPE):
+            self.game.quit()
+            
+    def spawn_enemy(self):
+        # Spawn at random edge of screen
+        side = random_int(0, 3)  # 0=left, 1=right, 2=top, 3=bottom
+        w, h = window_get_size()
+        
+        if side == 0:    # Left
+            enemy = Enemy(-30, random_range(0, h))
+        elif side == 1:  # Right
+            enemy = Enemy(w + 30, random_range(0, h))
+        elif side == 2:  # Top
+            enemy = Enemy(random_range(0, w), -30)
+        else:            # Bottom
+            enemy = Enemy(random_range(0, w), h + 30)
+            
+        self.add_entity(enemy)</div>
+
+                        <p><strong>Great!</strong> Now you have enemies that chase the player and end the game on collision. Try adding a score system or power-ups next!</p>
+                    </div>
+                </div>
+
+                <div class="tutorial-card" onclick="toggleTutorial(this)">
+                    <h3>Tutorial 3: Adding Shooting and Sound</h3>
+                    <p>Learn to handle mouse input, create bullets, and add sound effects.</p>
+                    <div class="tutorial-content">
+                        <h4>Step 1: Create Bullet Entity</h4>
+                        <div class="code-block">class Bullet(Entity):
+    def create(self):
+        super().create()
+        self.speed = 400
+        self.direction = 0  # Will be set when created
+        self.color = (255, 255, 100)  # Yellow
+        
+    def step(self):
+        super().step()
+        dt = self.scene.game.get_delta_time()
+        
+        # Move in direction
+        vx = lengthdir_x(self.speed, self.direction)
+        vy = lengthdir_y(self.speed, self.direction)
+        
+        self.x += vx * dt
+        self.y += vy * dt
+        
+        # Remove if off screen
+        w, h = window_get_size()
+        if (self.x < -50 or self.x > w + 50 or 
+            self.y < -50 or self.y > h + 50):
+            self.destroy()
+            
+        # Check collision with enemies
+        enemies = self.scene.get_entities_of_type(Enemy)
+        for enemy in enemies:
+            if self.distance_to(enemy) < 30:  # Simple distance check
+                enemy.destroy()
+                self.destroy()
+                # play_sound("explosion")  # Uncomment if you have sound
+                break
+                
+    def draw(self):
+        super().draw()
+        if not self.sprite_index:
+            draw_set_color(self.color)
+            draw_circle(self.x, self.y, 5, True)</div>
+
+                        <h4>Step 2: Add Shooting to Player</h4>
+                        <div class="code-block"># Update Player class
+class Player(Entity):
+    def create(self):
+        super().create()
+        self.speed = 200
+        self.color = (255, 100, 100)
+        self.shoot_cooldown = 0
+        self.shoot_delay = 0.2  # Can shoot every 0.2 seconds
+        
+    def step(self):
+        super().step()
+        dt = self.scene.game.get_delta_time()
+        
+        # ... existing movement code ...
+        
+        # Update shoot cooldown
+        if self.shoot_cooldown > 0:
+            self.shoot_cooldown -= dt
+            
+        # Shooting with mouse
+        if mouse_check(1) and self.shoot_cooldown <= 0:  # Left mouse button
+            mouse_x = mouse_get_x()
+            mouse_y = mouse_get_y()
+            
+            # Calculate direction to mouse
+            direction = point_direction(self.x, self.y, mouse_x, mouse_y)
+            
+            # Create bullet
+            bullet = Bullet(self.x, self.y)
+            bullet.direction = direction
+            self.scene.add_entity(bullet)
+            
+            # Reset cooldown
+            self.shoot_cooldown = self.shoot_delay
+            
+            # Play sound effect
+            # play_sound("shoot")  # Uncomment if you have sound</div>
+
+                        <h4>Step 3: Add Sound Assets</h4>
+                        <p>Create the following folder structure in your game directory:</p>
+                        <div class="code-block">YourGame/
+├── main.py
+└── assets/
+    └── sounds/
+        ├── shoot.wav      # Shooting sound
+        └── explosion.wav  # Enemy death sound</div>
+
+                        <p>Then uncomment the <span class="highlight">play_sound()</span> calls in your code!</p>
+
+                        <h4>Step 4: Update UI</h4>
+                        <div class="code-block"># Update GameScene draw method
+def draw(self):
+    super().draw()
+    draw_set_color((255, 255, 255))
+    draw_text(10, 10, "WASD/Arrows: Move", scale=1)
+    draw_text(10, 30, "Mouse: Aim and shoot", scale=1)
+    draw_text(10, 50, "ESC: Exit", scale=1)
+    
+    # Show enemy count
+    enemy_count = self.count_entities_of_type(Enemy)
+    draw_text(10, 80, f"Enemies: {enemy_count}", scale=1)</div>
+
+                        <p><strong>Awesome!</strong> You now have a fully functional shooter game with sound effects. Try adding a score system, different enemy types, or power-ups!</p>
+                    </div>
+                </div>
+
+                <div class="tutorial-card" onclick="toggleTutorial(this)">
+                    <h3>Tutorial 4: Scenes and Game States</h3>
+                    <p>Create multiple scenes for menus, gameplay, and game over screens.</p>
+                    <div class="tutorial-content">
+                        <h4>Step 1: Create Menu Scene</h4>
+                        <div class="code-block">class MenuScene(Scene):
+    def create(self):
+        super().create()
+        self.background_color = (20, 30, 50)  # Dark blue
+        self.title_flash = 0
+        
+    def step(self):
+        super().step()
+        dt = self.game.get_delta_time()
+        self.title_flash += dt * 3  # Flash animation
+        
+        # Start game with SPACE
+        if keyboard_check_pressed(pygame.K_SPACE):
+            self.game.switch_scene("game")
+            
+        # Exit with ESC
+        if keyboard_check_pressed(pygame.K_ESCAPE):
+            self.game.quit()
+            
+    def draw(self):
+        super().draw()
+        w, h = window_get_size()
+        
+        # Title with flash effect
+        flash = abs(math.sin(self.title_flash))
+        draw_set_alpha(0.7 + flash * 0.3)
+        draw_set_color((255, 200, 100))
+        draw_text(w//2 - 150, h//2 - 100, "SPACE SHOOTER", scale=3)
+        
+        # Instructions
+        draw_set_alpha(1.0)
+        draw_set_color((255, 255, 255))
+        draw_text(w//2 - 100, h//2, "Press SPACE to Start", scale=1.5)
+        draw_text(w//2 - 80, h//2 + 40, "Press ESC to Exit", scale=1)</div>
+
+                        <h4>Step 2: Create Game Over Scene</h4>
+                        <div class="code-block">class GameOverScene(Scene):
+    def create(self):
+        super().create()
+        self.background_color = (50, 20, 20)  # Dark red
+        self.final_score = 0  # Will be set by game scene
+        
+    def step(self):
+        super().step()
+        # Restart with SPACE
+        if keyboard_check_pressed(pygame.K_SPACE):
+            self.game.switch_scene("game")
+            
+        # Back to menu with ESC
+        if keyboard_check_pressed(pygame.K_ESCAPE):
+            self.game.switch_scene("menu")
+            
+    def draw(self):
+        super().draw()
+        w, h = window_get_size()
+        
+        # Game Over text
+        draw_set_color((255, 100, 100))
+        draw_text(w//2 - 120, h//2 - 100, "GAME OVER", scale=3)
+        
+        # Score
+        draw_set_color((255, 255, 255))
+        draw_text(w//2 - 80, h//2 - 20, f"Score: {self.final_score}", scale=2)
+        
+        # Instructions
+        draw_text(w//2 - 100, h//2 + 40, "SPACE: Play Again", scale=1)
+        draw_text(w//2 - 80, h//2 + 70, "ESC: Main Menu", scale=1)</div>
+
+                        <h4>Step 3: Add Score System</h4>
+                        <div class="code-block"># Update GameScene
+class GameScene(Scene):
+    def create(self):
+        super().create()
+        self.background_color = (50, 150, 200)
+        self.spawn_timer = 0
+        self.spawn_delay = 2.0
+        self.score = 0
+        
+        # Create player
+        player = Player(400, 300)
+        self.add_entity(player)
+        
+    # ... existing methods ...
+    
+    def enemy_destroyed(self):
+        """Call this when enemy is destroyed by bullet"""
+        self.score += 100
+        
+    def game_over(self):
+        """Call this when player dies"""
+        # Pass score to game over scene
+        game_over_scene = self.game.scenes.get("gameover")
+        if game_over_scene:
+            game_over_scene.final_score = self.score
+        self.game.switch_scene("gameover")</div>
+
+                        <h4>Step 4: Update Bullet Collision</h4>
+                        <div class="code-block"># Update Bullet step method collision part
+enemies = self.scene.get_entities_of_type(Enemy)
+for enemy in enemies:
+    if self.distance_to(enemy) < 30:
+        enemy.destroy()
+        self.destroy()
+        
+        # Increase score
+        if hasattr(self.scene, 'enemy_destroyed'):
+            self.scene.enemy_destroyed()
+            
+        # play_sound("explosion")
+        break</div>
+
+                        <h4>Step 5: Setup All Scenes</h4>
+                        <div class="code-block"># Main game setup
+import math  # Add this import for menu scene
+
+game = Game(800, 600, "Space Shooter", 60)
+
+# Create all scenes
+menu = MenuScene()
+game_scene = GameScene()
+game_over = GameOverScene()
+
+# Add scenes to game
+game.add_scene("menu", menu)
+game.add_scene("game", game_scene)
+game.add_scene("gameover", game_over)
+
+# Start with menu
+game.init_scene("menu")
+game.run()</div>
+
+                        <p><strong>Perfect!</strong> You now have a complete game with multiple scenes, score tracking, and proper game flow. This is the foundation for any larger game project!</p>
+                    </div>
+                </div>
+
+                <div class="tutorial-card" onclick="toggleTutorial(this)">
+                    <h3>Tutorial 5: Advanced Features</h3>
+                    <p>Learn about cameras, surfaces, and particle effects for polished games.</p>
+                    <div class="tutorial-content">
+                        <h4>Camera Following</h4>
+                        <div class="code-block"># In your GameScene create method
+def create(self):
+    super().create()
+    # ... existing code ...
+    
+    # Create camera
+    self.camera = camera_create()
+    camera_set_view_size(self.camera, 800, 600)
+    camera_set_view_port(self.camera, 0, 0, 800, 600)
+    camera_set_active(self.camera)
+    
+def step(self):
+    super().step()
+    # ... existing code ...
+    
+    # Follow player with camera
+    players = self.get_entities_of_type(Player)
+    if players:
+        player = players[0]
+        # Smooth camera following
+        cam_x, cam_y = camera_get_view_pos(self.camera)
+        target_x = player.x - 400  # Center on player
+        target_y = player.y - 300
+        
+        new_x = lerp(cam_x, target_x, 0.1)  # Smooth interpolation
+        new_y = lerp(cam_y, target_y, 0.1)
+        camera_set_view_pos(self.camera, new_x, new_y)</div>
+
+                        <h4>Particle System</h4>
+                        <div class="code-block">class Particle(Entity):
+    def create(self):
+        super().create()
+        self.vx = random_range(-100, 100)
+        self.vy = random_range(-100, 100)
+        self.life = random_range(1.0, 2.0)
+        self.max_life = self.life
+        self.size = random_range(3, 8)
+        self.color = (255, random_int(100, 255), 0)  # Orange-ish
+        
+    def step(self):
+        super().step()
+        dt = self.scene.game.get_delta_time()
+        
+        # Move
+        self.x += self.vx * dt
+        self.y += self.vy * dt
+        
+        # Fade over time
+        self.life -= dt
+        self.image_alpha = self.life / self.max_life
+        
+        if self.life <= 0:
+            self.destroy()
+            
+    def draw(self):
+        super().draw()
+        alpha = self.image_alpha
+        draw_set_alpha(alpha)
+        draw_set_color(self.color)
+        draw_circle(self.x, self.y, self.size * alpha, True)
+        draw_set_alpha(1.0)  # Reset alpha
+
+# Create explosion particles
+def create_explosion(scene, x, y, count=10):
+    for i in range(count):
+        particle = Particle(x, y)
+        scene.add_entity(particle)</div>
+
+                        <h4>Surface Effects</h4>
+                        <div class="code-block"># Create a minimap using surfaces
+class GameScene(Scene):
+    def create(self):
+        super().create()
+        # ... existing code ...
+        
+        # Create minimap surface
+        self.minimap = surface_create(200, 150)
+        
+    def draw(self):
+        super().draw()
+        
+        # Draw minimap
+        surface_set_target(self.minimap)
+        draw_clear((0, 0, 50))  # Dark blue background
+        
+        # Draw entities on minimap (scaled down)
+        for entity in self.entities:
+            if isinstance(entity, Player):
+                draw_set_color((0, 255, 0))  # Green for player
+                draw_circle(entity.x * 0.2, entity.y * 0.2, 3, True)
+            elif isinstance(entity, Enemy):
+                draw_set_color((255, 0, 0))  # Red for enemies
+                draw_circle(entity.x * 0.2, entity.y * 0.2, 2, True)
+        
+        surface_reset_target()
+        
+        # Draw minimap to screen
+        w, h = window_get_size()
+        surface_draw(w - 220, 20, self.minimap)</div>
+
+                        <p><strong>Excellent!</strong> You've learned advanced techniques that can make your games feel more professional and engaging. Experiment with these concepts to create unique gameplay experiences!</p>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <footer>
+            <p>&copy; 2025 Vivi Engine Documentation. Built with passion for game development.</p>
+            <p><a href="https://github.com/LePtiDarron/ViviEngine" style="color: #3498db;" target="_blank">Visit GitHub Repository</a></p>
+        </footer>
+    </div>
+
+    <script>
+        function showSection(sectionName) {
+            const sections = document.querySelectorAll('.section');
+            sections.forEach(section => {
+                section.classList.remove('active');
+            });
+            
+            const targetSection = document.getElementById(sectionName);
+            if (targetSection) {
+                targetSection.classList.add('active');
+            }
+            
+            const navItems = document.querySelectorAll('.nav-item');
+            navItems.forEach(item => {
+                item.classList.remove('active');
+            });
+            
+            const activeNavItem = document.querySelector(`[onclick*="${sectionName}"]`);
+            if (activeNavItem) {
+                activeNavItem.classList.add('active');
+            }
+            
+            window.scrollTo(0, 0);
+        }
+        
+        function toggleTutorial(element) {
+            element.classList.toggle('expanded');
+        }
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            showSection('home');
+        });
+    </script>
+</body>
+</html>
