@@ -9,7 +9,7 @@ class Game:
     Gère les scènes, la boucle de jeu principale et l'initialisation de pygame.
     """
     
-    def __init__(self, width: int = 800, height: int = 600, title: str = "Game Engine", fps: int = 60):
+    def __init__(self, width: int = 800, height: int = 600, title: str = "ViviEngine Game", fps: int = 60):
         """
         Initialise le moteur de jeu.
         

@@ -1,4 +1,4 @@
-from engine import *
+from ViviEngine import *
 from entities.enemy import Enemy
 from entities.player import Player
 from entities.bullet import Bullet

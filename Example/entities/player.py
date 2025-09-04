@@ -1,4 +1,4 @@
-from engine import *
+from ViviEngine import *
 
 class Player(Entity):
     def __init__(self, x, y):

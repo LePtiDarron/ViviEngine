@@ -1,4 +1,4 @@
-# Game Engine 2D - Python
+# ViviEngine : Python 2D Game Engine
 
 Un moteur de jeu 2D simple inspiré de GameMaker Studio, construit avec pygame.
 
@@ -14,8 +14,8 @@ pip install -e .
 ## Structure du projet
 
 ```
-game-engine/
-├── engine/
+.
+├── ViviEngine/
 │   ├── __init__.py
 │   ├── entity.py
 │   ├── game.py
