@@ -149,3 +149,6 @@ class Game:
     def get_delta_time(self) -> float:
         """Retourne le delta time du frame actuel."""
         return self._delta_time
+
+    def _stop_game(self):
+        self.running = False

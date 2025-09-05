@@ -24,7 +24,7 @@ class GameScene(Scene):
     def step(self):
         super().step()
         if hasattr(self.game, '_delta_time'):
-            dt = self.game.get_delta_time()
+            dt = get_delta_time()
             self.enemy_spawn_timer += dt
         else:
             self.enemy_spawn_timer += 1/60

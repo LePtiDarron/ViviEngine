@@ -19,7 +19,7 @@ class Enemy(Entity):
             if dist > 5:
                 direction = self.direction_to(self.player)
                 if hasattr(self.scene.game, '_delta_time'):
-                    dt = self.scene.game.get_delta_time()
+                    dt = get_delta_time()
                     self.x += lengthdir_x(self.speed * dt, direction)
                     self.y += lengthdir_y(self.speed * dt, direction)
                 else:

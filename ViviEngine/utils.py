@@ -813,3 +813,26 @@ def _clear_input_states():
 def _end_frame_cleanup():
     """Nettoyage de fin de frame."""
     _clear_input_states()
+
+def go_to(scene):
+    """Change la scène."""
+    _game_instance.init_scene(scene)
+
+def scene_restart():
+    """Réinitialise la scène."""
+    _game_instance.current_scene.cleanup()
+    _game_instance.current_scene.create()
+
+def entity_number(entity_type):
+    """Compte le nombre d'entité d'un type."""
+    return _game_instance.count_entities_of_type(entity_type)
+
+def get_entities(entity_type):
+    """Retourne la liste d'entité d'un type."""
+    return _game_instance.get_entities_of_type(entity_type)
+
+def get_delta_time():
+    return _game_instance.get_delta_time()
+
+def game_stop():
+    _game_instance._stop_game()

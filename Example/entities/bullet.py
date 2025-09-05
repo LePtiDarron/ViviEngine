@@ -10,7 +10,7 @@ class Bullet(Entity):
     def step(self):
         super().step()
         if hasattr(self.scene.game, '_delta_time'):
-            dt = self.scene.game.get_delta_time()
+            dt = get_delta_time()
             self.x += lengthdir_x(self.speed * dt, self.direction)
             self.y += lengthdir_y(self.speed * dt, self.direction)
         else:

@@ -25,7 +25,7 @@ class Player(Entity):
             dy *= 0.707
             
         if hasattr(self.scene.game, '_delta_time'):
-            dt = self.scene.game.get_delta_time()
+            dt = get_delta_time()
             self.x += dx * self.speed * dt
             self.y += dy * self.speed * dt
         else:

@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name="ViviEngine",
-    version="1.0",
+    version="0.2",
     packages=find_packages(),
     install_requires=[
         "pygame>=2.5.0",
