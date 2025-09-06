@@ -4,7 +4,7 @@ Un moteur de jeu 2D simple inspiré de GameMaker Studio, construit avec pygame.
 
 ## Installation
 
-Assurez-vous d'avoir Python 3.7+ et pygame installé :
+Assurez-vous d'avoir Python 3.12+ et pygame installé :
 
 ```bash
 pip install pygame

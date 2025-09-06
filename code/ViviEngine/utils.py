@@ -1,7 +1,275 @@
 import pygame
 import os
-from typing import Dict, Any, Tuple, Optional, Union
+from typing import Dict, List, Any, Tuple, Optional, Union
 import math
+
+_sprites: Dict[str, 'Sprite'] = {}
+_sounds: Dict[str, pygame.mixer.Sound] = {}
+_fonts: Dict[str, pygame.font.Font] = {}
+
+class Sprite:
+    """Classe pour gérer les sprites avec support multi-images et centre personnalisé."""
+    
+    def __init__(self, surface: pygame.Surface, name: str, image_count: int = 1):
+        self.name = name
+        self.full_surface = surface
+        self.image_count = image_count
+        self.images: List[pygame.Surface] = []
+        
+        # Calculer les dimensions d'une seule image
+        self.image_width = surface.get_width() // image_count
+        self.image_height = surface.get_height()
+        
+        # Centre par défaut (haut-gauche)
+        self.center_x = 0
+        self.center_y = 0
+        
+        # Diviser la surface en images individuelles
+        self._split_images()
+    
+    def _split_images(self):
+        """Divise la surface principale en images individuelles."""
+        self.images.clear()
+        
+        for i in range(self.image_count):
+            x = i * self.image_width
+            # Vérifier que l'image rentre dans la surface
+            if x + self.image_width <= self.full_surface.get_width():
+                image_rect = pygame.Rect(x, 0, self.image_width, self.image_height)
+                image = self.full_surface.subsurface(image_rect).copy()
+                self.images.append(image)
+            else:
+                # Si l'image ne rentre pas, prendre ce qui reste
+                remaining_width = self.full_surface.get_width() - x
+                if remaining_width > 0:
+                    image_rect = pygame.Rect(x, 0, remaining_width, self.image_height)
+                    image = self.full_surface.subsurface(image_rect).copy()
+                    self.images.append(image)
+    
+    def get_image(self, index: int = 0) -> pygame.Surface:
+        """Retourne l'image à l'index spécifié."""
+        if 0 <= index < len(self.images):
+            return self.images[index]
+        return self.images[0] if self.images else self.full_surface
+    
+    def set_center(self, x: float, y: float):
+        """Définit le centre du sprite."""
+        self.center_x = x
+        self.center_y = y
+    
+    def get_width(self) -> int:
+        """Retourne la largeur d'une image."""
+        return self.image_width
+    
+    def get_height(self) -> int:
+        """Retourne la hauteur d'une image."""
+        return self.image_height
+
+def load_sprite(filepath: str, name: Optional[str] = None) -> bool:
+    """
+    Charge un sprite depuis un fichier.
+    
+    Args:
+        filepath: Chemin vers le fichier image
+        name: Nom du sprite (optionnel, utilise le nom du fichier par défaut)
+    
+    Returns:
+        True si le chargement a réussi
+    """
+    try:
+        if name is None:
+            name = os.path.splitext(os.path.basename(filepath))[0]
+        
+        # Charger la surface
+        surface = pygame.image.load(filepath).convert_alpha()
+        
+        # Détecter si c'est un sprite strip
+        image_count = 1
+        if "_strip" in name:
+            try:
+                # Extraire le nombre d'images depuis le nom
+                strip_part = name.split("_strip")[1]
+                image_count = int(strip_part)
+                # Enlever la partie _stripN du nom
+                name = name.split("_strip")[0]
+            except (IndexError, ValueError):
+                image_count = 1
+        
+        # Créer et stocker le sprite
+        sprite = Sprite(surface, name, image_count)
+        _sprites[name] = sprite
+        
+        print(f"Sprite '{name}' chargé avec {image_count} image(s)")
+        return True
+        
+    except pygame.error as e:
+        print(f"Erreur lors du chargement du sprite '{filepath}': {e}")
+        return False
+
+def load_sound(filepath: str, name: Optional[str] = None) -> bool:
+    """
+    Charge un son depuis un fichier.
+    
+    Args:
+        filepath: Chemin vers le fichier audio
+        name: Nom du son (optionnel, utilise le nom du fichier par défaut)
+    
+    Returns:
+        True si le chargement a réussi
+    """
+    try:
+        if name is None:
+            name = os.path.splitext(os.path.basename(filepath))[0]
+        
+        sound = pygame.mixer.Sound(filepath)
+        _sounds[name] = sound
+        
+        print(f"Son '{name}' chargé")
+        return True
+        
+    except pygame.error as e:
+        print(f"Erreur lors du chargement du son '{filepath}': {e}")
+        return False
+
+def load_font(filepath: str, size: int = 24, name: Optional[str] = None) -> bool:
+    """
+    Charge une police depuis un fichier.
+    
+    Args:
+        filepath: Chemin vers le fichier de police
+        size: Taille de la police
+        name: Nom de la police (optionnel, utilise le nom du fichier par défaut)
+    
+    Returns:
+        True si le chargement a réussi
+    """
+    try:
+        if name is None:
+            name = os.path.splitext(os.path.basename(filepath))[0]
+        
+        font = pygame.font.Font(filepath, size)
+        _fonts[name] = font
+        
+        print(f"Police '{name}' chargée (taille {size})")
+        return True
+        
+    except pygame.error as e:
+        print(f"Erreur lors du chargement de la police '{filepath}': {e}")
+        return False
+
+def get_sprite(name: str) -> Optional[Sprite]:
+    """Retourne le sprite avec le nom donné."""
+    return _sprites.get(name)
+
+def get_sound(name: str) -> Optional[pygame.mixer.Sound]:
+    """Retourne le son avec le nom donné."""
+    return _sounds.get(name)
+
+def get_font(name: str) -> Optional[pygame.font.Font]:
+    """Retourne la police avec le nom donné."""
+    return _fonts.get(name)
+
+def sprite_set_center(name: str, x: float, y: float) -> bool:
+    """
+    Définit le centre d'un sprite.
+    
+    Args:
+        name: Nom du sprite
+        x: Position X du centre (0 = gauche, 0.5 = centre, 1 = droite)
+        y: Position Y du centre (0 = haut, 0.5 = centre, 1 = bas)
+    
+    Returns:
+        True si le sprite existe et que le centre a été défini
+    """
+    sprite = get_sprite(name)
+    if sprite:
+        center_x = x * sprite.get_width()
+        center_y = y * sprite.get_height()
+        sprite.set_center(center_x, center_y)
+        return True
+    return False
+
+def draw_sprite(x: float, y: float, name: str, image_index: int, xscale: float = 1.0, yscale: float = 1.0, angle: float = 0.0):
+    """
+    Dessine un sprite à la position donnée.
+    
+    Args:
+        x, y: Position de dessin
+        name: Nom du sprite
+        xscale, yscale: Facteurs d'échelle
+        angle: Angle de rotation en degrés
+        image_index: Index de l'image à dessiner (pour les sprites multi-images)
+    """
+    sprite = get_sprite(name)
+    if not sprite:
+        return
+    
+    # Obtenir l'image à l'index spécifié
+    image = sprite.get_image(image_index)
+    
+    # Appliquer les transformations
+    if xscale != 1.0 or yscale != 1.0:
+        new_width = int(image.get_width() * abs(xscale))
+        new_height = int(image.get_height() * abs(yscale))
+        image = pygame.transform.scale(image, (new_width, new_height))
+        
+        # Flip si échelle négative
+        if xscale < 0:
+            image = pygame.transform.flip(image, True, False)
+        if yscale < 0:
+            image = pygame.transform.flip(image, False, True)
+    
+    if angle != 0:
+        image = pygame.transform.rotate(image, angle)
+    
+    # Calculer la position en tenant compte du centre
+    center_x = sprite.center_x * abs(xscale)
+    center_y = sprite.center_y * abs(yscale)
+    
+    # Si l'image a été tournée, ajuster le centre
+    if angle != 0:
+        # Le centre peut changer avec la rotation, mais on garde une approximation simple
+        pass
+    
+    draw_x = x - center_x
+    draw_y = y - center_y
+    
+    # Dessiner l'image
+    screen = _game_instance.screen
+    screen.blit(image, (draw_x, draw_y))
+
+def draw_text(x: float, y: float, text: str, scale: float = 1, font_name: Optional[str] = None):
+    """Dessine du texte."""
+    font = None
+    if font_name:
+        font = get_font(font_name)
+    
+    if font is None:
+        font = pygame.font.Font(None, int(24 * scale))
+    
+    color = _draw_color
+    text_surface = font.render(str(text), True, color)
+    
+    if scale != 1:
+        new_width = int(text_surface.get_width() * scale)
+        new_height = int(text_surface.get_height() * scale)
+        text_surface = pygame.transform.scale(text_surface, (new_width, new_height))
+    
+    screen = _game_instance.screen
+    screen.blit(text_surface, (x, y))
+
+_draw_color = (255, 255, 255)
+_draw_alpha = 1.0
+
+def draw_set_color(color):
+    """Définit la couleur de dessin."""
+    global _draw_color
+    _draw_color = color
+
+def draw_set_alpha(alpha):
+    """Définit la transparence de dessin."""
+    global _draw_alpha
+    _draw_alpha = alpha
 
 # Variables globales du moteur (initialisées par Game)
 _game_instance = None
@@ -94,18 +362,6 @@ def load_assets(assets_folder: str = "assets"):
     else:
         print(f"Warning: Assets folder '{fonts_folder}' not found!")
 
-def get_sprite(name: str) -> Optional[pygame.Surface]:
-    """Récupère un sprite par son nom."""
-    return _sprites.get(name)
-
-def get_sound(name: str) -> Optional[pygame.mixer.Sound]:
-    """Récupère un son par son nom."""
-    return _sounds.get(name)
-
-def get_font(name: str) -> Optional[pygame.font.Font]:
-    """Récupère une police par son nom."""
-    return _fonts.get(name)
-
 # Fonctions de rendu
 def draw_clear(color: Tuple[int, int, int]):
     """
@@ -117,112 +373,6 @@ def draw_clear(color: Tuple[int, int, int]):
     surface = _current_surface or _screen
     if surface:
         surface.fill(color)
-
-def draw_sprite(x: float, y: float, sprite_name: str, xscale: float = 1, yscale: float = 1, angle: float = 0):
-    """
-    Dessine un sprite.
-    
-    Args:
-        x, y: Position
-        sprite_name: Nom du sprite
-        xscale, yscale: Échelles
-        angle: Angle de rotation en degrés
-    """
-    sprite = get_sprite(sprite_name)
-    if not sprite:
-        return
-        
-    surface = _current_surface or _screen
-    if not surface:
-        return
-    
-    # Appliquer les transformations
-    if xscale != 1 or yscale != 1:
-        new_width = int(sprite.get_width() * abs(xscale))
-        new_height = int(sprite.get_height() * abs(yscale))
-        sprite = pygame.transform.scale(sprite, (new_width, new_height))
-        
-        # Gérer le flip horizontal/vertical
-        if xscale < 0 and yscale < 0:
-            sprite = pygame.transform.flip(sprite, True, True)
-        elif xscale < 0:
-            sprite = pygame.transform.flip(sprite, True, False)
-        elif yscale < 0:
-            sprite = pygame.transform.flip(sprite, False, True)
-    
-    if angle != 0:
-        sprite = pygame.transform.rotate(sprite, -angle)  # Pygame utilise le sens contraire
-    
-    # Appliquer la couleur et l'alpha
-    if _render_color != (255, 255, 255) or _render_alpha != 255:
-        sprite = sprite.copy()
-        if _render_color != (255, 255, 255):
-            sprite.fill(_render_color, special_flags=pygame.BLEND_MULT)
-        if _render_alpha != 255:
-            sprite.set_alpha(_render_alpha)
-    
-    # Calculer la position finale
-    rect = sprite.get_rect()
-    rect.topleft = (int(x), int(y))
-    
-    surface.blit(sprite, rect)
-
-def draw_text(x: float, y: float, text: str, scale: float = 1, font_name: str = None):
-    """
-    Dessine du texte.
-    
-    Args:
-        x, y: Position
-        text: Texte à dessiner
-        scale: Échelle du texte
-        font_name: Nom de la police (par défaut: police système)
-    """
-    surface = _current_surface or _screen
-    if not surface:
-        return
-    
-    # Sélectionner la police
-    font = None
-    if font_name:
-        font = get_font(font_name)
-    if not font:
-        size = int(24 * scale)
-        font = pygame.font.Font(None, size)
-    
-    # Créer la surface de texte
-    text_surface = font.render(str(text), True, _render_color)
-    
-    # Appliquer l'alpha
-    if _render_alpha != 255:
-        text_surface.set_alpha(_render_alpha)
-    
-    # Appliquer l'échelle si nécessaire
-    if scale != 1 and font_name:  # Seulement si on utilise une police chargée
-        new_width = int(text_surface.get_width() * scale)
-        new_height = int(text_surface.get_height() * scale)
-        text_surface = pygame.transform.scale(text_surface, (new_width, new_height))
-    
-    surface.blit(text_surface, (int(x), int(y)))
-
-def draw_set_color(color: Tuple[int, int, int]):
-    """
-    Définit la couleur de rendu.
-    
-    Args:
-        color: Couleur RGB (r, g, b)
-    """
-    global _render_color
-    _render_color = color
-
-def draw_set_alpha(alpha: float):
-    """
-    Définit l'alpha de rendu.
-    
-    Args:
-        alpha: Valeur alpha (0.0 à 1.0)
-    """
-    global _render_alpha
-    _render_alpha = int(alpha * 255)
 
 # Gestion des surfaces
 def surface_create(width: int, height: int) -> pygame.Surface:

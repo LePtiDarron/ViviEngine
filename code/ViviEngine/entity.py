@@ -1,7 +1,7 @@
 from typing import Optional, TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from scene import Scene
+    from .scene import Scene
 
 class Entity:
     """
@@ -31,6 +31,11 @@ class Entity:
         self.image_angle = 0.0  # En degrés
         self.image_alpha = 1.0
         self.image_blend = (255, 255, 255)  # Couleur de teinte
+        
+        # Animation
+        self.image_index = 0.0      # Index de l'image actuelle (float pour animation fluide)
+        self.image_speed = 0.0      # Vitesse d'animation (images par frame)
+        self.image_number = 1       # Nombre total d'images dans le sprite
         
         # Profondeur pour l'ordre de rendu (plus grand = devant)
         self.depth = 0
@@ -65,6 +70,18 @@ class Entity:
         self.xprevious = self.x
         self.yprevious = self.y
         
+        # Mettre à jour l'animation
+        self._update_animation()
+        
+    def _update_animation(self):
+        """Met à jour l'animation du sprite."""
+        if self.image_speed > 0 and self.image_number > 1:
+            self.image_index += self.image_speed
+            
+            # Faire boucler l'animation
+            if self.image_index >= self.image_number:
+                self.image_index = self.image_index % self.image_number
+        
     def draw(self):
         """
         Appelé à chaque frame pour le rendu.
@@ -77,8 +94,9 @@ class Entity:
             utils.draw_set_alpha(self.image_alpha)
             utils.draw_set_color(self.image_blend)
             
-            # Dessiner le sprite
-            utils.draw_sprite(self.x, self.y, self.sprite_index, 
+            # Dessiner le sprite avec l'index d'image approprié
+            current_image_index = int(self.image_index)
+            utils.draw_sprite(self.x, self.y, self.sprite_index, current_image_index,
                             self.image_xscale, self.image_yscale, self.image_angle)
             
             # Restaurer les paramètres par défaut
@@ -115,14 +133,50 @@ class Entity:
             if sprite:
                 self.sprite_width = sprite.get_width()
                 self.sprite_height = sprite.get_height()
+                self.image_number = sprite.image_count
                 
                 # Mettre à jour le masque de collision par défaut
-                self.mask_left = 0
-                self.mask_right = self.sprite_width - 1
-                self.mask_top = 0
-                self.mask_bottom = self.sprite_height - 1
-                
-    # Méthodes utilitaires pour les collisions
+                # Le masque est relatif au centre du sprite
+                self.mask_left = -sprite.center_x
+                self.mask_right = self.sprite_width - sprite.center_x - 1
+                self.mask_top = -sprite.center_y
+                self.mask_bottom = self.sprite_height - sprite.center_y - 1
+    
+    def animation_end(self) -> bool:
+        """
+        Vérifie si l'animation a atteint la fin.
+        
+        Returns:
+            True si l'animation est à la dernière image
+        """
+        return int(self.image_index) >= self.image_number - 1
+    
+    def animation_set(self, sprite_name: str, speed: float = 1.0, start_index: float = 0.0):
+        """
+        Configure une nouvelle animation.
+        
+        Args:
+            sprite_name: Nom du sprite à utiliser
+            speed: Vitesse d'animation (images par frame)
+            start_index: Index de départ de l'animation
+        """
+        self.set_sprite(sprite_name)
+        self.image_speed = speed
+        self.image_index = start_index
+    
+    def animation_stop(self):
+        """Arrête l'animation."""
+        self.image_speed = 0.0
+    
+    def animation_pause(self):
+        """Met en pause l'animation (alias de animation_stop)."""
+        self.animation_stop()
+    
+    def animation_resume(self, speed: float = 1.0):
+        """Reprend l'animation."""
+        self.image_speed = speed
+        
+    # Méthodes utilitaires pour les collisions (inchangées)
     def get_bbox_left(self) -> float:
         """Retourne la coordonnée gauche de la boîte de collision."""
         return self.x + self.mask_left * self.image_xscale

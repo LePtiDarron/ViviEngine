@@ -1,6 +1,6 @@
 import CodeBlock from "./CodeBlock";
 
-const Instalation = ({ activeSection }) => {
+const Installation = ({ activeSection }) => {
   return (
     <section id="installation" className={`section ${activeSection === 'installation' ? 'active' : ''}`}>
       <h2>Installation & Usage</h2>
@@ -12,7 +12,7 @@ const Instalation = ({ activeSection }) => {
         <div className="install-steps">
           <div className="install-step">
             <h4>1. Prerequisites</h4>
-            <p>Ensure you have Python 3.7+ installed on your system.</p>
+            <p>Ensure you have Python 3.12+ installed on your system.</p>
           </div>
           <div className="install-step">
             <h4>2. Install Pygame</h4>
@@ -36,10 +36,10 @@ const Instalation = ({ activeSection }) => {
       <p>Organize your game project like this:</p>
       <CodeBlock path="/code-snippets/project_structure.txt" />
 
-      <br></br>
+      <br />
       <a href="https://github.com/LePtiDarron/ViviEngine" className="btn w-100 d-flex justify-content-center" target="_blank">View Full Examples on GitHub</a>
     </section>
   );
 };
 
-export default Instalation;
+export default Installation;

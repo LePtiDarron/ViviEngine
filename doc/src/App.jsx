@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import Instalation from "./composants/Instalation";
+import Installation from "./composants/Installation";
 import Home from "./composants/Home";
 import Classes from './composants/Classes';
 import './App.css';
@@ -79,7 +79,7 @@ const ViviEngineDocumentation = () => {
 
         <main className='main-content'>
           <Home activeSection={activeSection}/>
-          <Instalation activeSection={activeSection}/>
+          <Installation activeSection={activeSection}/>
           <Classes activeSection={activeSection}/>
           <Functions activeSection={activeSection}/>
           <Tutorials activeSection={activeSection}/>
