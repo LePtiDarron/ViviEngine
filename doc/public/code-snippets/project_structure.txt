@@ -1,0 +1,8 @@
+YourGame/
+├── assets/
+│   ├── images/          # sprites .png, .jpg   
+│   ├── sounds/          # audio   .wav, .mp3   
+│   └── fonts/           # fonts   .ttf, .otf   
+│       └── font.ttf
+│
+└── main.py              # Entry point
