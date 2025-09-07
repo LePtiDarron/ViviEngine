@@ -52,8 +52,8 @@ class Sprite:
             return self.images[index]
         return self.images[0] if self.images else self.full_surface
     
-    def set_center(self, x: float, y: float):
-        """Définit le centre du sprite."""
+    def set_center(self, x: int, y: int):
+        """Définit le centre du sprite (en pixel)."""
         self.center_x = x
         self.center_y = y
     
@@ -183,9 +183,7 @@ def sprite_set_center(name: str, x: float, y: float) -> bool:
     """
     sprite = get_sprite(name)
     if sprite:
-        center_x = x * sprite.get_width()
-        center_y = y * sprite.get_height()
-        sprite.set_center(center_x, center_y)
+        sprite.set_center(x, y)
         return True
     return False
 
@@ -196,9 +194,9 @@ def draw_sprite(x: float, y: float, name: str, image_index: int, xscale: float =
     Args:
         x, y: Position de dessin
         name: Nom du sprite
+        image_index: Index de l'image à dessiner (pour les sprites multi-images)
         xscale, yscale: Facteurs d'échelle
         angle: Angle de rotation en degrés
-        image_index: Index de l'image à dessiner (pour les sprites multi-images)
     """
     sprite = get_sprite(name)
     if not sprite:
@@ -206,33 +204,48 @@ def draw_sprite(x: float, y: float, name: str, image_index: int, xscale: float =
     
     # Obtenir l'image à l'index spécifié
     image = sprite.get_image(image_index)
+    original_center_x = sprite.center_x
+    original_center_y = sprite.center_y
     
-    # Appliquer les transformations
+    # Appliquer l'échelle
     if xscale != 1.0 or yscale != 1.0:
         new_width = int(image.get_width() * abs(xscale))
         new_height = int(image.get_height() * abs(yscale))
         image = pygame.transform.scale(image, (new_width, new_height))
         
+        # Ajuster le centre avec l'échelle
+        original_center_x *= abs(xscale)
+        original_center_y *= abs(yscale)
+        
         # Flip si échelle négative
         if xscale < 0:
             image = pygame.transform.flip(image, True, False)
+            original_center_x = image.get_width() - original_center_x
         if yscale < 0:
             image = pygame.transform.flip(image, False, True)
+            original_center_y = image.get_height() - original_center_y
     
+    # Appliquer la rotation si nécessaire
     if angle != 0:
-        image = pygame.transform.rotate(image, angle)
-    
-    # Calculer la position en tenant compte du centre
-    center_x = sprite.center_x * abs(xscale)
-    center_y = sprite.center_y * abs(yscale)
-    
-    # Si l'image a été tournée, ajuster le centre
-    if angle != 0:
-        # Le centre peut changer avec la rotation, mais on garde une approximation simple
-        pass
-    
-    draw_x = x - center_x
-    draw_y = y - center_y
+        # Sauvegarder les dimensions avant rotation
+        old_center = (original_center_x, original_center_y)
+        
+        # Appliquer la rotation
+        rotated_image = pygame.transform.rotate(image, angle)
+        
+        # Calculer le nouveau centre après rotation
+        old_rect = image.get_rect(center=(x, y))
+        new_rect = rotated_image.get_rect(center=old_rect.center)
+        
+        # La position de dessin est maintenant le coin supérieur gauche du nouveau rectangle
+        draw_x = new_rect.x
+        draw_y = new_rect.y
+        
+        image = rotated_image
+    else:
+        # Pas de rotation, utiliser le calcul normal du centre
+        draw_x = x - original_center_x
+        draw_y = y - original_center_y
     
     # Dessiner l'image
     screen = _game_instance.screen
@@ -975,7 +988,7 @@ def scene_restart():
 
 def entity_number(entity_type):
     """Compte le nombre d'entité d'un type."""
-    return _game_instance.count_entities_of_type(entity_type)
+    return _game_instance.current_scene.count_entities_of_type(entity_type)
 
 def get_entities(entity_type):
     """Retourne la liste d'entité d'un type."""
