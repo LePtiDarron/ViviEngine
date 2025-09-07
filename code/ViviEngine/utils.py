@@ -169,14 +169,14 @@ def get_font(name: str) -> Optional[pygame.font.Font]:
     """Retourne la police avec le nom donné."""
     return _fonts.get(name)
 
-def sprite_set_center(name: str, x: float, y: float) -> bool:
+def sprite_set_center(name: str, x: int, y: int) -> bool:
     """
     Définit le centre d'un sprite.
     
     Args:
         name: Nom du sprite
-        x: Position X du centre (0 = gauche, 0.5 = centre, 1 = droite)
-        y: Position Y du centre (0 = haut, 0.5 = centre, 1 = bas)
+        x: Position X du centre
+        y: Position Y du centre
     
     Returns:
         True si le sprite existe et que le centre a été défini
@@ -186,90 +186,6 @@ def sprite_set_center(name: str, x: float, y: float) -> bool:
         sprite.set_center(x, y)
         return True
     return False
-
-def draw_sprite(x: float, y: float, name: str, image_index: int, xscale: float = 1.0, yscale: float = 1.0, angle: float = 0.0):
-    """
-    Dessine un sprite à la position donnée.
-    
-    Args:
-        x, y: Position de dessin
-        name: Nom du sprite
-        image_index: Index de l'image à dessiner (pour les sprites multi-images)
-        xscale, yscale: Facteurs d'échelle
-        angle: Angle de rotation en degrés
-    """
-    sprite = get_sprite(name)
-    if not sprite:
-        return
-    
-    # Obtenir l'image à l'index spécifié
-    image = sprite.get_image(image_index)
-    original_center_x = sprite.center_x
-    original_center_y = sprite.center_y
-    
-    # Appliquer l'échelle
-    if xscale != 1.0 or yscale != 1.0:
-        new_width = int(image.get_width() * abs(xscale))
-        new_height = int(image.get_height() * abs(yscale))
-        image = pygame.transform.scale(image, (new_width, new_height))
-        
-        # Ajuster le centre avec l'échelle
-        original_center_x *= abs(xscale)
-        original_center_y *= abs(yscale)
-        
-        # Flip si échelle négative
-        if xscale < 0:
-            image = pygame.transform.flip(image, True, False)
-            original_center_x = image.get_width() - original_center_x
-        if yscale < 0:
-            image = pygame.transform.flip(image, False, True)
-            original_center_y = image.get_height() - original_center_y
-    
-    # Appliquer la rotation si nécessaire
-    if angle != 0:
-        # Sauvegarder les dimensions avant rotation
-        old_center = (original_center_x, original_center_y)
-        
-        # Appliquer la rotation
-        rotated_image = pygame.transform.rotate(image, angle)
-        
-        # Calculer le nouveau centre après rotation
-        old_rect = image.get_rect(center=(x, y))
-        new_rect = rotated_image.get_rect(center=old_rect.center)
-        
-        # La position de dessin est maintenant le coin supérieur gauche du nouveau rectangle
-        draw_x = new_rect.x
-        draw_y = new_rect.y
-        
-        image = rotated_image
-    else:
-        # Pas de rotation, utiliser le calcul normal du centre
-        draw_x = x - original_center_x
-        draw_y = y - original_center_y
-    
-    # Dessiner l'image
-    screen = _game_instance.screen
-    screen.blit(image, (draw_x, draw_y))
-
-def draw_text(x: float, y: float, text: str, scale: float = 1, font_name: Optional[str] = None):
-    """Dessine du texte."""
-    font = None
-    if font_name:
-        font = get_font(font_name)
-    
-    if font is None:
-        font = pygame.font.Font(None, int(24 * scale))
-    
-    color = _draw_color
-    text_surface = font.render(str(text), True, color)
-    
-    if scale != 1:
-        new_width = int(text_surface.get_width() * scale)
-        new_height = int(text_surface.get_height() * scale)
-        text_surface = pygame.transform.scale(text_surface, (new_width, new_height))
-    
-    screen = _game_instance.screen
-    screen.blit(text_surface, (x, y))
 
 _draw_color = (255, 255, 255)
 _draw_alpha = 1.0
@@ -301,6 +217,7 @@ _render_alpha = 255
 
 # Gestion de la caméra
 _cameras: Dict[int, Dict[str, Any]] = {}
+_camera_surfaces: Dict[int, pygame.Surface] = {}
 _active_camera = None
 _next_camera_id = 0
 
@@ -386,6 +303,150 @@ def draw_clear(color: Tuple[int, int, int]):
     surface = _current_surface or _screen
     if surface:
         surface.fill(color)
+
+def _begin_camera_render():
+    """Commence le rendu vers la surface de la caméra active."""
+    global _current_surface
+    if _active_camera != None and _active_camera in _camera_surfaces:
+        _current_surface = _camera_surfaces[_active_camera]
+        # Effacer la surface de la caméra
+        _current_surface.fill((0, 0, 0, 0))  # Transparent par défaut)
+
+def _end_camera_render():
+    """Termine le rendu de caméra et affiche le résultat sur l'écran."""
+    global _current_surface
+    
+    if _active_camera != None and _active_camera in _cameras and _active_camera in _camera_surfaces:
+        cam = _cameras[_active_camera]
+        camera_surface = _camera_surfaces[_active_camera]
+        
+        # Remettre l'écran comme cible
+        _current_surface = None
+        
+        # Calculer le scaling entre view et port
+        view_width = cam['view_width']
+        view_height = cam['view_height']
+        port_width = cam['port_width']
+        port_height = cam['port_height']
+        
+        # Redimensionner la surface de caméra pour le viewport
+        if view_width != port_width or view_height != port_height:
+            scaled_surface = pygame.transform.scale(camera_surface, (port_width, port_height))
+        else:
+            scaled_surface = camera_surface
+        
+        # Dessiner sur l'écran au bon endroit
+        _screen.blit(scaled_surface, (cam['port_x'], cam['port_y']))
+
+def draw_sprite(x: float, y: float, name: str, image_index: int, xscale: float = 1.0, yscale: float = 1.0, angle: float = 0.0):
+    """
+    Dessine un sprite à la position donnée.
+    
+    Args:
+        x, y: Position de dessin
+        name: Nom du sprite
+        image_index: Index de l'image à dessiner (pour les sprites multi-images)
+        xscale, yscale: Facteurs d'échelle
+        angle: Angle de rotation en degrés
+    """
+    sprite = get_sprite(name)
+    if not sprite:
+        return
+    
+    # Calculer la position relative à la caméra
+    final_x = x
+    final_y = y
+    
+    if _active_camera != None and _active_camera in _cameras:
+        cam = _cameras[_active_camera]
+        final_x = x - cam['view_x']
+        final_y = y - cam['view_y']
+        
+        # Culling : ne pas dessiner si hors de la vue de la caméra
+        sprite_width = sprite.get_width() * abs(xscale)
+        sprite_height = sprite.get_height() * abs(yscale)
+        
+        if (final_x + sprite_width < 0 or final_x > cam['view_width'] or
+            final_y + sprite_height < 0 or final_y > cam['view_height']):
+            return  # Hors de vue, ne pas dessiner
+    
+    # Obtenir l'image à l'index spécifié
+    image = sprite.get_image(image_index)
+    original_center_x = sprite.center_x
+    original_center_y = sprite.center_y
+    
+    # Appliquer l'échelle
+    if xscale != 1.0 or yscale != 1.0:
+        new_width = int(image.get_width() * abs(xscale))
+        new_height = int(image.get_height() * abs(yscale))
+        image = pygame.transform.scale(image, (new_width, new_height))
+        
+        # Ajuster le centre avec l'échelle
+        original_center_x *= abs(xscale)
+        original_center_y *= abs(yscale)
+        
+        # Flip si échelle négative
+        if xscale < 0:
+            image = pygame.transform.flip(image, True, False)
+            original_center_x = image.get_width() - original_center_x
+        if yscale < 0:
+            image = pygame.transform.flip(image, False, True)
+            original_center_y = image.get_height() - original_center_y
+    
+    # Appliquer la rotation si nécessaire
+    if angle != 0:
+        # Sauvegarder les dimensions avant rotation
+        old_center = (original_center_x, original_center_y)
+        
+        # Appliquer la rotation
+        rotated_image = pygame.transform.rotate(image, angle)
+        
+        # Calculer le nouveau centre après rotation
+        old_rect = image.get_rect(center=(final_x, final_y))
+        new_rect = rotated_image.get_rect(center=old_rect.center)
+        
+        # La position de dessin est maintenant le coin supérieur gauche du nouveau rectangle
+        draw_x = new_rect.x
+        draw_y = new_rect.y
+        
+        image = rotated_image
+    else:
+        # Pas de rotation, utiliser le calcul normal du centre
+        draw_x = final_x - original_center_x
+        draw_y = final_y - original_center_y
+    
+    # Dessiner l'image sur la surface appropriée (caméra ou écran)
+    target_surface = _current_surface or _screen
+    target_surface.blit(image, (draw_x, draw_y))
+
+def draw_text(x: float, y: float, text: str, scale: float = 1, font_name: Optional[str] = None):
+    """Dessine du texte en tenant compte de la caméra."""
+    # Appliquer la transformation de caméra
+    final_x = x
+    final_y = y
+    
+    if _active_camera != None and _active_camera in _cameras:
+        cam = _cameras[_active_camera]
+        final_x = x - cam['view_x']
+        final_y = y - cam['view_y']
+    
+    font = None
+    if font_name:
+        font = get_font(font_name)
+    
+    if font is None:
+        font = pygame.font.Font(None, int(24 * scale))
+    
+    color = _draw_color
+    text_surface = font.render(str(text), True, color)
+    
+    if scale != 1:
+        new_width = int(text_surface.get_width() * scale)
+        new_height = int(text_surface.get_height() * scale)
+        text_surface = pygame.transform.scale(text_surface, (new_width, new_height))
+    
+    target_surface = _current_surface or _screen
+    target_surface.blit(text_surface, (final_x, final_y))
 
 # Gestion des surfaces
 def surface_create(width: int, height: int) -> pygame.Surface:
@@ -493,7 +554,7 @@ def window_set_size(width: int, height: int):
 # Gestion de la caméra
 def camera_create() -> int:
     """
-    Crée une nouvelle caméra.
+    Crée une nouvelle caméra avec sa propre surface de rendu.
     
     Returns:
         ID de la caméra créée
@@ -513,11 +574,14 @@ def camera_create() -> int:
         'port_height': 600
     }
     
+    # Créer la surface de rendu pour cette caméra
+    _camera_surfaces[camera_id] = pygame.Surface((800, 600), pygame.SRCALPHA)
+    
     return camera_id
 
 def camera_set_view_size(camera_id: int, width: int, height: int):
     """
-    Définit la taille de la vue de la caméra.
+    Définit la taille de la vue de la caméra et recrée sa surface.
     
     Args:
         camera_id: ID de la caméra
@@ -526,6 +590,8 @@ def camera_set_view_size(camera_id: int, width: int, height: int):
     if camera_id in _cameras:
         _cameras[camera_id]['view_width'] = width
         _cameras[camera_id]['view_height'] = height
+        # Recréer la surface avec la nouvelle taille
+        _camera_surfaces[camera_id] = pygame.Surface((width, height), pygame.SRCALPHA)
 
 def camera_set_view_port(camera_id: int, x: int, y: int, width: int, height: int):
     """
@@ -593,7 +659,7 @@ def camera_get_view_size(camera_id: int = None) -> Tuple[int, int]:
         Tuple (largeur, hauteur)
     """
     cam_id = camera_id or _active_camera
-    if cam_id and cam_id in _cameras:
+    if cam_id != None and cam_id in _cameras:
         cam = _cameras[cam_id]
         return (cam['view_width'], cam['view_height'])
     return (800, 600)
@@ -723,21 +789,73 @@ def mouse_check_released(button: int) -> bool:
     """
     return button in _mouse_released
 
-def mouse_get_x() -> int:
+def mouse_get_x() -> float:
     """
-    Retourne la position X de la souris.
+    Retourne la position X de la souris dans le monde du jeu (tenant compte de la caméra).
     
     Returns:
-        Position X de la souris
+        Position X de la souris dans le monde
+    """
+    screen_x = _mouse_x
+    
+    if _active_camera is not None and _active_camera in _cameras:
+        cam = _cameras[_active_camera]
+        
+        # Convertir de l'écran vers le viewport de caméra
+        viewport_x = screen_x - cam['port_x']
+        
+        # Convertir du viewport vers la vue de caméra (tenir compte du scaling)
+        scale_x = cam['view_width'] / cam['port_width']
+        camera_x = viewport_x * scale_x
+        
+        # Convertir de la vue de caméra vers le monde
+        world_x = camera_x + cam['view_x']
+        
+        return world_x
+    
+    return screen_x
+
+def mouse_get_y() -> float:
+    """
+    Retourne la position Y de la souris dans le monde du jeu (tenant compte de la caméra).
+    
+    Returns:
+        Position Y de la souris dans le monde
+    """
+    screen_y = _mouse_y
+    
+    if _active_camera is not None and _active_camera in _cameras:
+        cam = _cameras[_active_camera]
+        
+        # Convertir de l'écran vers le viewport de caméra
+        viewport_y = screen_y - cam['port_y']
+        
+        # Convertir du viewport vers la vue de caméra (tenir compte du scaling)
+        scale_y = cam['view_height'] / cam['port_height']
+        camera_y = viewport_y * scale_y
+        
+        # Convertir de la vue de caméra vers le monde
+        world_y = camera_y + cam['view_y']
+        
+        return world_y
+    
+    return screen_y
+
+def mouse_get_screen_x() -> int:
+    """
+    Retourne la position X de la souris sur l'écran (sans transformation caméra).
+    
+    Returns:
+        Position X de la souris sur l'écran
     """
     return _mouse_x
 
-def mouse_get_y() -> int:
+def mouse_get_screen_y() -> int:
     """
-    Retourne la position Y de la souris.
+    Retourne la position Y de la souris sur l'écran (sans transformation caméra).
     
     Returns:
-        Position Y de la souris
+        Position Y de la souris sur l'écran
     """
     return _mouse_y
 
@@ -768,18 +886,27 @@ def stop_sound(sound_name: str):
 
 def draw_rectangle(x: float, y: float, width: float, height: float, filled: bool = True):
     """
-    Dessine un rectangle.
+    Dessine un rectangle en tenant compte de la caméra.
     
     Args:
         x, y: Position du coin supérieur gauche
         width, height: Dimensions
         filled: Si True, rectangle plein, sinon contour
     """
+    # Appliquer la transformation de caméra
+    final_x = x
+    final_y = y
+    
+    if _active_camera != None and _active_camera in _cameras:
+        cam = _cameras[_active_camera]
+        final_x = x - cam['view_x']
+        final_y = y - cam['view_y']
+    
     surface = _current_surface or _screen
     if not surface:
         return
     
-    rect = pygame.Rect(int(x), int(y), int(width), int(height))
+    rect = pygame.Rect(int(final_x), int(final_y), int(width), int(height))
     
     if filled:
         pygame.draw.rect(surface, _render_color, rect)
@@ -788,36 +915,58 @@ def draw_rectangle(x: float, y: float, width: float, height: float, filled: bool
 
 def draw_circle(x: float, y: float, radius: float, filled: bool = True):
     """
-    Dessine un cercle.
+    Dessine un cercle en tenant compte de la caméra.
     
     Args:
         x, y: Position du centre
         radius: Rayon
         filled: Si True, cercle plein, sinon contour
     """
+    # Appliquer la transformation de caméra
+    final_x = x
+    final_y = y
+    
+    if _active_camera != None and _active_camera in _cameras:
+        cam = _cameras[_active_camera]
+        final_x = x - cam['view_x']
+        final_y = y - cam['view_y']
+    
     surface = _current_surface or _screen
     if not surface:
         return
     
     if filled:
-        pygame.draw.circle(surface, _render_color, (int(x), int(y)), int(radius))
+        pygame.draw.circle(surface, _render_color, (int(final_x), int(final_y)), int(radius))
     else:
-        pygame.draw.circle(surface, _render_color, (int(x), int(y)), int(radius), 1)
+        pygame.draw.circle(surface, _render_color, (int(final_x), int(final_y)), int(radius), 1)
 
 def draw_line(x1: float, y1: float, x2: float, y2: float, width: int = 1):
     """
-    Dessine une ligne.
+    Dessine une ligne en tenant compte de la caméra.
     
     Args:
         x1, y1: Point de départ
         x2, y2: Point d'arrivée
         width: Épaisseur de la ligne
     """
+    # Appliquer la transformation de caméra
+    final_x1 = x1
+    final_y1 = y1
+    final_x2 = x2
+    final_y2 = y2
+    
+    if _active_camera != None and _active_camera in _cameras:
+        cam = _cameras[_active_camera]
+        final_x1 = x1 - cam['view_x']
+        final_y1 = y1 - cam['view_y']
+        final_x2 = x2 - cam['view_x']
+        final_y2 = y2 - cam['view_y']
+    
     surface = _current_surface or _screen
     if not surface:
         return
     
-    pygame.draw.line(surface, _render_color, (int(x1), int(y1)), (int(x2), int(y2)), width)
+    pygame.draw.line(surface, _render_color, (int(final_x1), int(final_y1)), (int(final_x2), int(final_y2)), width)
 
 def random_range(min_val: float, max_val: float) -> float:
     """
@@ -933,6 +1082,18 @@ def lengthdir_y(length: float, direction: float) -> float:
     """
     return -length * math.sin(math.radians(direction))  # -sin car l'axe Y est inversé
 
+def sign(x):
+    """
+    Retourne le signe d'un nombre.
+    
+    Args:
+        x: Nombre à tester
+        
+    Returns:
+        -1, 0, ou 1
+    """
+    return math.copysign(1, x)
+
 # Fonction interne pour gérer les événements pygame
 def _handle_pygame_event(event):
     """Gère les événements pygame pour les entrées."""
@@ -995,10 +1156,9 @@ def get_entities(entity_type):
     return _game_instance.current_scene.get_entities_of_type(entity_type)
 
 def get_delta_time():
+    """Retourne le delta time du frame actuel."""
     return _game_instance.get_delta_time()
 
 def game_stop():
+    """Arrête le jeu."""
     _game_instance._stop_game()
-
-def sign(x):
-    return math.copysign(1, x)

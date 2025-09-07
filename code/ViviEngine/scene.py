@@ -45,11 +45,14 @@ class Scene:
         
     def draw(self):
         """
-        Appelé à chaque frame pour le rendu.
+        Appelé à chaque frame pour le rendu avec support caméra.
         """
         from . import utils
         
-        # Effacer l'écran avec la couleur de fond
+        # Commencer le rendu de caméra
+        utils._begin_camera_render()
+        
+        # Effacer la surface de caméra avec la couleur de fond
         utils.draw_clear(self.background_color)
         
         # Trier les entités par profondeur (depth) pour l'ordre de rendu
@@ -59,6 +62,9 @@ class Scene:
         # Dessiner toutes les entités visibles
         for entity in sorted_entities:
             entity.draw()
+        
+        # Terminer le rendu de caméra et l'afficher à l'écran
+        utils._end_camera_render()
             
     def cleanup(self):
         """

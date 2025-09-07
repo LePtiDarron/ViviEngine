@@ -153,16 +153,16 @@ const functions = [
     description: 'Returns True if mouse button was just released this frame'
   },
   {
-    name: 'mouse_get_x',
+    name: 'mouse_get_screen_x, mouse_get_screen_y',
     category: 'Input Handling',
-    prototype: 'mouse_get_x()',
-    description: 'Get current mouse X position in window coordinates'
+    prototype: 'mouse_get_screen_x(), mouse_get_screen_y()',
+    description: 'Get current mouse position in window coordinates'
   },
   {
-    name: 'mouse_get_y',
+    name: 'mouse_get_x, mouse_get_y',
     category: 'Input Handling',
-    prototype: 'mouse_get_y()',
-    description: 'Get current mouse Y position in window coordinates'
+    prototype: 'mouse_get_x(), mouse_get_y()',
+    description: 'Get current mouse position in game coordinates'
   },
 
   // Audio Functions
