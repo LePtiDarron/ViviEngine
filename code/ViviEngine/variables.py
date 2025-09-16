@@ -1,5 +1,6 @@
 import pygame
 
+KEY_ANY = -1
 KEY_BACKSPACE = pygame.K_BACKSPACE
 KEY_TAB = pygame.K_TAB
 KEY_CLEAR = pygame.K_CLEAR
@@ -120,3 +121,7 @@ LIGHT_BLUE  = (173, 216, 230)
 DARK_BLUE   = (0, 0, 139)
 LIGHT_GREEN = (144, 238, 144)
 DARK_GREEN  = (0, 100, 0)
+
+START   = 1
+CENTER  = 2
+END     = 3

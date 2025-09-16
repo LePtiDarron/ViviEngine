@@ -65,7 +65,7 @@ class Sprite:
         """Retourne la hauteur d'une image."""
         return self.image_height
 
-def load_sprite(filepath: str, name: Optional[str] = None) -> bool:
+def load_sprite(filepath: str, sprite_name: Optional[str] = None, center_x = 0, center_y = 0) -> bool:
     """
     Charge un sprite depuis un fichier.
     
@@ -77,8 +77,7 @@ def load_sprite(filepath: str, name: Optional[str] = None) -> bool:
         True si le chargement a réussi
     """
     try:
-        if name is None:
-            name = os.path.splitext(os.path.basename(filepath))[0]
+        name = os.path.splitext(os.path.basename(filepath))[0]
         
         # Charger la surface
         surface = pygame.image.load(filepath).convert_alpha()
@@ -87,19 +86,18 @@ def load_sprite(filepath: str, name: Optional[str] = None) -> bool:
         image_count = 1
         if "_strip" in name:
             try:
-                # Extraire le nombre d'images depuis le nom
                 strip_part = name.split("_strip")[1]
                 image_count = int(strip_part)
-                # Enlever la partie _stripN du nom
                 name = name.split("_strip")[0]
-            except (IndexError, ValueError):
+            except (IndexError, ValueError) as e:
                 image_count = 1
         
         # Créer et stocker le sprite
-        sprite = Sprite(surface, name, image_count)
-        _sprites[name] = sprite
+        sprite = Sprite(surface, sprite_name, image_count)
+        _sprites[sprite_name] = sprite
+        sprite_set_center(sprite_name, center_x, center_y)
         
-        print(f"Sprite '{name}' chargé avec {image_count} image(s)")
+        print(f"Sprite '{sprite_name}' chargé avec {image_count} image(s)")
         return True
         
     except pygame.error as e:
@@ -190,6 +188,9 @@ def sprite_set_center(name: str, x: int, y: int) -> bool:
 _draw_color = (255, 255, 255)
 _draw_alpha = 1.0
 
+_text_halign = 1
+_text_valign = 1
+
 def draw_set_color(color):
     """Définit la couleur de dessin."""
     global _draw_color
@@ -199,6 +200,44 @@ def draw_set_alpha(alpha):
     """Définit la transparence de dessin."""
     global _draw_alpha
     _draw_alpha = alpha
+
+def draw_set_halign(halign: int):
+    """
+    Définit l'alignement horizontal du texte.
+    
+    Args:
+        halign: 1=gauche, 2=centre, 3=droite
+    """
+    global _text_halign
+    _text_halign = halign
+
+def draw_set_valign(valign: int):
+    """
+    Définit l'alignement vertical du texte.
+    
+    Args:
+        valign: 1=haut, 2=centre, 3=bas
+    """
+    global _text_valign
+    _text_valign = valign
+
+def draw_get_halign() -> int:
+    """
+    Retourne l'alignement horizontal actuel.
+    
+    Returns:
+        1=gauche, 2=centre, 3=droite
+    """
+    return _text_halign
+
+def draw_get_valign() -> int:
+    """
+    Retourne l'alignement vertical actuel.
+    
+    Returns:
+        1=haut, 2=centre, 3=bas
+    """
+    return _text_valign
 
 # Variables globales du moteur (initialisées par Game)
 _game_instance = None
@@ -393,6 +432,16 @@ def draw_sprite(x: float, y: float, name: str, image_index: int, xscale: float =
             image = pygame.transform.flip(image, False, True)
             original_center_y = image.get_height() - original_center_y
     
+    # Appliquer la couleur de dessin si elle n'est pas blanche
+    if _draw_color != (255, 255, 255):
+        # Créer une copie de l'image pour ne pas modifier l'original
+        image = image.copy()
+        # Créer une surface colorée avec la même taille
+        color_surface = pygame.Surface(image.get_size(), pygame.SRCALPHA)
+        color_surface.fill(_draw_color)
+        # Appliquer la couleur en mode multiply
+        image.blit(color_surface, (0, 0), special_flags=pygame.BLEND_MULT)
+    
     # Appliquer la rotation si nécessaire
     if angle != 0:
         # Sauvegarder les dimensions avant rotation
@@ -420,16 +469,8 @@ def draw_sprite(x: float, y: float, name: str, image_index: int, xscale: float =
     target_surface.blit(image, (draw_x, draw_y))
 
 def draw_text(x: float, y: float, text: str, scale: float = 1, font_name: Optional[str] = None):
-    """Dessine du texte en tenant compte de la caméra."""
-    # Appliquer la transformation de caméra
-    final_x = x
-    final_y = y
-    
-    if _active_camera != None and _active_camera in _cameras:
-        cam = _cameras[_active_camera]
-        final_x = x - cam['view_x']
-        final_y = y - cam['view_y']
-    
+    """Dessine du texte en tenant compte de la caméra et de l'alignement."""
+    # Préparer la police
     font = None
     if font_name:
         font = get_font(font_name)
@@ -437,16 +478,100 @@ def draw_text(x: float, y: float, text: str, scale: float = 1, font_name: Option
     if font is None:
         font = pygame.font.Font(None, int(24 * scale))
     
+    # Créer la surface de texte
     color = _draw_color
     text_surface = font.render(str(text), True, color)
     
+    # Appliquer le scaling
     if scale != 1:
         new_width = int(text_surface.get_width() * scale)
         new_height = int(text_surface.get_height() * scale)
         text_surface = pygame.transform.scale(text_surface, (new_width, new_height))
     
+    # Calculer les dimensions du texte
+    text_width = text_surface.get_width()
+    text_height = text_surface.get_height()
+    
+    # Ajuster la position selon l'alignement horizontal
+    final_x = x
+    if _text_halign == 2:  # Centre
+        final_x = x - text_width // 2
+    elif _text_halign == 3:  # Droite
+        final_x = x - text_width
+    # Si _text_halign == 1 (gauche), pas d'ajustement nécessaire
+    
+    # Ajuster la position selon l'alignement vertical
+    final_y = y
+    if _text_valign == 2:  # Centre
+        final_y = y - text_height // 2
+    elif _text_valign == 3:  # Bas
+        final_y = y - text_height
+    # Si _text_valign == 1 (haut), pas d'ajustement nécessaire
+    
+    # Appliquer la transformation de caméra
+    if _active_camera != None and _active_camera in _cameras:
+        cam = _cameras[_active_camera]
+        final_x = final_x - cam['view_x']
+        final_y = final_y - cam['view_y']
+    
+    # Dessiner le texte
     target_surface = _current_surface or _screen
     target_surface.blit(text_surface, (final_x, final_y))
+
+# Fonctions utilitaires pour calculer les dimensions du texte
+def string_width(text: str, scale: float = 1, font_name: Optional[str] = None) -> int:
+    """
+    Calcule la largeur d'un texte.
+    
+    Args:
+        text: Texte à mesurer
+        scale: Échelle du texte
+        font_name: Nom de la police (optionnel)
+        
+    Returns:
+        Largeur du texte en pixels
+    """
+    font = None
+    if font_name:
+        font = get_font(font_name)
+    
+    if font is None:
+        font = pygame.font.Font(None, int(24 * scale))
+    
+    text_surface = font.render(str(text), True, (255, 255, 255))
+    width = text_surface.get_width()
+    
+    if scale != 1:
+        width = int(width * scale)
+    
+    return width
+
+def string_height(text: str, scale: float = 1, font_name: Optional[str] = None) -> int:
+    """
+    Calcule la hauteur d'un texte.
+    
+    Args:
+        text: Texte à mesurer
+        scale: Échelle du texte
+        font_name: Nom de la police (optionnel)
+        
+    Returns:
+        Hauteur du texte en pixels
+    """
+    font = None
+    if font_name:
+        font = get_font(font_name)
+    
+    if font is None:
+        font = pygame.font.Font(None, int(24 * scale))
+    
+    text_surface = font.render(str(text), True, (255, 255, 255))
+    height = text_surface.get_height()
+    
+    if scale != 1:
+        height = int(height * scale)
+    
+    return height
 
 # Gestion des surfaces
 def surface_create(width: int, height: int) -> pygame.Surface:
@@ -1100,13 +1225,14 @@ def _handle_pygame_event(event):
     global _keys_pressed, _keys_held, _keys_released
     global _mouse_pressed, _mouse_held, _mouse_released, _mouse_x, _mouse_y
     
-    # Réinitialiser les états "pressé" et "relâché"
     if event.type == pygame.KEYDOWN:
+        _keys_pressed.add(KEY_ANY)
         _keys_pressed.add(event.key)
         _keys_held.add(event.key)
         if event.key in _keys_released:
             _keys_released.remove(event.key)
     elif event.type == pygame.KEYUP:
+        _keys_released.add(KEY_ANY)
         _keys_released.add(event.key)
         if event.key in _keys_held:
             _keys_held.remove(event.key)

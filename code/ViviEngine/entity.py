@@ -176,22 +176,25 @@ class Entity:
         """Reprend l'animation."""
         self.image_speed = speed
         
-    # Méthodes utilitaires pour les collisions (inchangées)
     def get_bbox_left(self) -> float:
-        """Retourne la coordonnée gauche de la boîte de collision."""
-        return self.x + self.mask_left * self.image_xscale
-        
+        left = self.x + self.mask_left * self.image_xscale
+        right = self.x + self.mask_right * self.image_xscale
+        return min(left, right)  # Toujours le plus petit
+
     def get_bbox_right(self) -> float:
-        """Retourne la coordonnée droite de la boîte de collision."""
-        return self.x + self.mask_right * self.image_xscale
-        
+        left = self.x + self.mask_left * self.image_xscale
+        right = self.x + self.mask_right * self.image_xscale
+        return max(left, right)  # Toujours le plus grand
+
     def get_bbox_top(self) -> float:
-        """Retourne la coordonnée supérieure de la boîte de collision."""
-        return self.y + self.mask_top * self.image_yscale
-        
+        top = self.y + self.mask_top * self.image_yscale
+        bottom = self.y + self.mask_bottom * self.image_yscale
+        return min(top, bottom)  # Toujours le plus petit
+
     def get_bbox_bottom(self) -> float:
-        """Retourne la coordonnée inférieure de la boîte de collision."""
-        return self.y + self.mask_bottom * self.image_yscale
+        top = self.y + self.mask_top * self.image_yscale
+        bottom = self.y + self.mask_bottom * self.image_yscale
+        return max(top, bottom)  # Toujours le plus grand
         
     def point_in_bbox(self, px: float, py: float) -> bool:
         """
